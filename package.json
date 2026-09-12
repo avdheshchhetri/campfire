@@ -1,34 +1,43 @@
 {
-  "name": "campfire-challenges",
-  "version": "1.0.0",
+  "name": "campfire",
   "private": true,
+  "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "tsc -b && vite build",
-    "test": "vitest run",
-    "preview": "vite preview",
+    "dev": "vite --config vite.config.js --configLoader native --host 127.0.0.1",
+    "build": "npm run typecheck && vite build --config vite.config.js --configLoader native",
+    "preview": "vite preview --config vite.config.js --configLoader native --host 127.0.0.1",
+    "test": "npm run test:react && npm run test:unit && npm run test:challenges",
+    "test:react": "vitest run --config vite.config.js --configLoader native",
+    "test:unit": "node --test src/features/leaderboard/leaderboard.test.js src/campfire/section-b.test.mjs",
+    "test:challenges": "vitest run --config vitest.config.ts --configLoader native",
+    "typecheck": "tsc --noEmit",
     "dev:syllabus": "vite --config vite.syllabus-demo.config.ts --host 127.0.0.1 --port 5174",
     "build:syllabus-demo": "vite build --config vite.syllabus-demo.config.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0",
     "lucide-react": "^0.468.0",
-    "pdf-lib": "^1.17.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.0",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "@testing-library/react": "^16.3.0",
+    "@vitejs/plugin-react": "^5.0.3",
+    "jsdom": "^26.1.0",
+    "tailwindcss": "^4.1.13",
+    "vite": "^7.1.5",
+    "vitest": "^3.2.4",
     "@electric-sql/pglite": "^0.5.8",
-    "@tailwindcss/vite": "^4.1.0",
     "@types/node": "^22.20.2",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "@vitejs/plugin-react": "^4.7.0",
-    "jsdom": "^30.0.1",
-    "tailwindcss": "^4.1.0",
-    "typescript": "~5.8.3",
-    "vite": "^6.3.5",
-    "vitest": "^3.2.0"
+    "typescript": "~5.8.3"
   }
 }

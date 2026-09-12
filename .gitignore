@@ -5,4 +5,10 @@ dist-syllabus-demo/
 .env.*
 !.env.example
 .env
+.DS_Store
+*.local
+*.log
+coverage/
+supabase/.temp/
+supabase/.branches/
 *.tsbuildinfo

@@ -35,21 +35,21 @@ async function click(label) {
 }
 
 describe('room forms', () => {
-  it('creates the room and owner membership with a six-character code', async () => {
+  it('creates the room and owner membership through the host RPC', async () => {
     const callback = vi.fn(); await render(<CreateRoom onCreated={callback} />);
     await fill('input[maxlength="100"]', 'Systems group'); await submit();
     expect(callback).toHaveBeenCalledOnce();
-    const room = callback.mock.calls[0][0]; expect(room.name).toBe('Systems group'); expect(room.join_code).toHaveLength(6);
+    const room = callback.mock.calls[0][0]; expect(room.name).toBe('Systems group'); expect(room.join_code).toHaveLength(10);
     expect(demoData().room_members.some(member => member.room_id === room.id && member.user_id === demoUserId)).toBe(true);
   });
-  it('retries membership without creating a duplicate room', async () => {
+  it('retries a failed room read without creating a duplicate room', async () => {
     const original = supabase.from; let fail = true;
     vi.spyOn(supabase, 'from').mockImplementation(table => {
-      if (table === 'room_members' && fail) { fail = false; return { insert: async () => ({ error: { message: 'Temporary network issue' } }) }; }
+      if (table === 'rooms' && fail) { fail = false; const query = { select: () => query, eq: () => query, single: async () => ({ error: { message: 'Temporary network issue' } }) }; return query; }
       return original(table);
     });
     await render(<CreateRoom />); await fill('input[maxlength="100"]', 'Retry group'); await submit();
-    expect(container.textContent).toContain('membership could not be saved');
+    expect(container.textContent).toContain('Your room was created');
     expect(demoData().rooms).toHaveLength(2); await submit(); expect(demoData().rooms).toHaveLength(2);
     expect(container.textContent).toContain('is ready');
   });

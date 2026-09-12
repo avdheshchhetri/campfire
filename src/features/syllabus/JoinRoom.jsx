@@ -14,13 +14,13 @@ export default function JoinRoom({ onJoined = () => {} }) {
     inFlight.current = true; setBusy(true); setError('');
     try {
       const joinCode = code.trim().toUpperCase();
-      if (!/^[A-Z0-9]{6}$/.test(joinCode)) throw new Error('Enter a six-character room code.');
-      const user = await requireUser();
-      const room = await supabase.from('rooms').select('*').eq('join_code', joinCode).maybeSingle();
+      if (!/^[A-Z0-9]{6,10}$/.test(joinCode)) throw new Error('Enter the 6–10 character code shared by your group.');
+      await requireUser();
+      const joinedRoom = await supabase.rpc('join_room', { p_join_code: joinCode });
+      if (joinedRoom.error) throw joinedRoom.error;
+      const room = await supabase.from('rooms').select('*').eq('id', joinedRoom.data).maybeSingle();
       if (room.error) throw room.error;
       if (!room.data) throw new Error('No accessible room matches that code. Check it with your group.');
-      const result = await supabase.from('room_members').insert({ room_id: room.data.id, user_id: user.id });
-      if (result.error && result.error.code !== '23505') throw result.error;
       setJoined(room.data); onJoined(room.data);
     } catch (err) { setError(err.message || 'Could not join this room.'); }
     finally { inFlight.current = false; setBusy(false); }
@@ -30,10 +30,10 @@ export default function JoinRoom({ onJoined = () => {} }) {
     <h2 className="mt-2 font-serif text-2xl">Join a room</h2>
     {joined ? <p className="mt-5 text-emerald-800" role="status">You’re in {joined.name}.</p> :
       <form className="mt-5 grid gap-4" onSubmit={submit}>
-        <p className="text-sm leading-6 text-stone-500">Ask a teammate for their six-character room code.</p>
-        <Field label="Room code"><input className={`${inputClass} font-mono uppercase tracking-widest`} autoComplete="off" spellCheck={false} required maxLength={6} value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="ABC234" disabled={busy} /></Field>
+        <p className="text-sm leading-6 text-stone-500">Ask a teammate for their room code.</p>
+        <Field label="Room code"><input className={`${inputClass} font-mono uppercase tracking-widest`} autoComplete="off" spellCheck={false} required maxLength={10} value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="ABC234" disabled={busy} /></Field>
         <ErrorMessage>{error}</ErrorMessage>
-        <button className={buttonClass} disabled={busy || code.trim().length !== 6}>{busy ? 'Joining…' : 'Join room'}</button>
+        <button className={buttonClass} disabled={busy || code.trim().length < 6}>{busy ? 'Joining…' : 'Join room'}</button>
       </form>}
   </section>;
 }

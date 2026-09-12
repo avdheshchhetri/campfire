@@ -11,12 +11,12 @@ npm test
 npm run build
 ```
 
-The standalone page is explicitly a **local, in-memory demo**. Start a round and use the perspective selector to read three different clues. The answer is `2 A`. Refreshing resets the demo; it does not simulate multi-device networking. Demo solutions are intentionally in the browser and never used by the live adapter.
+Open `/challenge-demo.html` on the development server for the standalone **local, in-memory demo**. Start a round and use the perspective selector to read three different clues. The answer is `2 A`. Refreshing resets the demo; it does not simulate multi-device networking. Demo solutions are intentionally in the browser and never used by the live adapter. The main `/` page is Section D's authenticated app shell; the challenge feature remains available for live integration through the component below.
 
 ## Integrate with the team's app
 
-1. Apply your existing shared Campfire schema, then run `supabase/migrations/202609120001_challenge_engine.sql` in Supabase SQL Editor or your migration workflow. Apply once. Existing duplicate active split-puzzle rounds must be resolved before the unique index can be created.
-2. Copy `src/features/challenges` into your app. Exclude the demo adapter and test if you do not need them. Install React, `@supabase/supabase-js`, and `lucide-react`. Import `src/styles.css` once; Tailwind 4 requires `@tailwindcss/vite` in your Vite plugins. The CSS has global base styles—merge those with your app's existing reset/theme rather than importing duplicates.
+1. For a fresh database, apply the repository migrations in filename order: `20260912000100_shared_schema.sql`, `20260912000200_access_and_room_functions.sql`, `20260912000300_challenge_engine.sql`, then `20260912000400_challenge_permissions.sql`. Apply each once. The challenge migration retains the original SQL but now follows the host schema and access rules. The final migration removes host column-level UPDATE grants that survive table-level revocation. Existing duplicate active split-puzzle rounds must be resolved before the unique index can be created.
+2. Use `src/features/challenges` in the host app, or copy it into another app without the demo adapter and tests when those are unnecessary. It requires React, `@supabase/supabase-js`, `lucide-react`, and Tailwind 4 through `@tailwindcss/vite`. `src/challenge-demo.css` supplies the standalone demo theme and is loaded only by `/challenge-demo.html`; merge the needed styles with the host's theme when wiring the live component instead of importing its global reset unchanged.
 3. Pass the team's existing authenticated Supabase client and room/session context:
 
 ```tsx
@@ -46,13 +46,15 @@ The host app owns login, profiles, room membership, session creation, and presen
 
 ## Shared-schema security integration
 
-The supplied base schema has no RLS policies. This migration secures **challenges and challenge_clues** and their RPCs, and revokes direct client writes to both tables. Coordinate that write restriction if other modules currently write these tables directly. The host team must secure its profiles, rooms, room_members, sessions, and session_presence tables; otherwise a user able to forge room membership can defeat any room-level authorization. The SQL assumes trusted, correctly secured parent data. Do not deploy the base schema publicly without those host policies. No service credentials are needed by this module.
+The shared schema and host access migration secure profiles, rooms, room_members, sessions, session_presence, and syllabus topics. The challenge migration then secures **challenges and challenge_clues** and their RPCs; the permissions migration removes the remaining column-level UPDATE grants. Together they deny direct client mutations of both challenge tables while restrictive SELECT policies keep each clue visible only to its assignee. Challenge writes must use the supplied RPCs. No service credentials are needed by this module.
+
+If a database already ran the original `202609120001_challenge_engine.sql` manually or recorded its old version, inspect and verify its schema and migration history before applying this merged sequence. Reconcile the old challenge version with `20260912000300` only after confirming that its SQL is already present; do not run it twice or blindly rerun the shared schema. Apply only missing migrations in dependency order and finish with `20260912000400_challenge_permissions.sql`. Existing deployed databases need that history review; this repository's automated checks start from an empty database.
 
 The supplied leaderboard counts all room topics identically for every member; this feature deliberately leaves it unchanged and does not present individual scores.
 
 ## Verification
 
-`npm test` runs eight tests covering the local adapter and the real migration in embedded PostgreSQL (PGlite): private perspectives, answer normalization, failed/correct submissions, reset/cancel, subscription cleanup, RLS isolation, anonymous/outsider denial, private answer storage, 3–6 participant distribution, late joiners, and ended sessions. The fixture mocks Supabase auth and trusted parent data; hosted JWT delivery, realtime, and the host's parent-table policies still require integration testing. `npm run build` performs strict TypeScript checking and production bundling. A pnpm lockfile is included for reproducible installs (`pnpm install`, `pnpm test`, `pnpm run build`).
+`npm test` runs all host and feature suites; `npm run test:challenges` runs the nine challenge adapter and database tests. In embedded PostgreSQL (PGlite), all four migrations run in filename order, followed by the host RLS regression suite and challenge lifecycle checks. These cover private perspectives, answer normalization, failed/correct submissions, reset/cancel, subscription cleanup, RLS isolation, anonymous/outsider denial, denial of direct challenge and clue writes by room members, private answer storage, 3–6 participant distribution, late joiners, and ended sessions. Only the Supabase auth schema and JWT delivery are simulated; parent-table policies come from the real migrations. Hosted JWT delivery and realtime still require integration testing. `npm run build` checks TypeScript and builds both the host and standalone demo. The combined dependency lockfiles also support `pnpm install`, `pnpm test`, and `pnpm run build`; see the repository README for setup.
 
 Before deploying, use a Supabase test project and 3–6 separate authenticated browser profiles:
 

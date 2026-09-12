@@ -1,7 +1,20 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "framework": "vite",
   "functions": {
-    "api/parse-syllabus.js": { "maxDuration": 60 },
-    "api/verify-teaching.js": { "maxDuration": 60 }
-  }
+    "api/parse-syllabus.js": {
+      "maxDuration": 60
+    },
+    "api/verify-teaching.js": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!api(?:/|$)|assets/|favicon.svg|challenge-demo.html).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

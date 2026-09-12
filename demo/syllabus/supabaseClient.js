@@ -45,6 +45,18 @@ function builder(table) {
   }; return query;
 }
 export const supabase = {
+  async rpc(name, args) {
+    if (name === 'create_room') {
+      const id = crypto.randomUUID();
+      store.rooms.push({ id, name: args.p_name, subject: args.p_subject, exam_date: args.p_exam_date, created_by: demoUserId, join_code: crypto.randomUUID().replaceAll('-', '').slice(0, 10).toUpperCase() });
+      store.room_members.push({ room_id: id, user_id: demoUserId });
+      return { data: id, error: null };
+    }
+    const room = store.rooms.find(item => item.join_code === args.p_join_code.trim().toUpperCase());
+    if (!room) return { data: null, error: { message: 'Room code not found.' } };
+    if (!store.room_members.some(item => item.room_id === room.id && item.user_id === demoUserId)) store.room_members.push({ room_id: room.id, user_id: demoUserId });
+    return { data: room.id, error: null };
+  },
   auth: {
     async getUser() { return { data: { user: { id: demoUserId } }, error: null }; },
     async getSession() { return { data: { session: { access_token: 'local-demo-not-a-real-token' } }, error: null }; },

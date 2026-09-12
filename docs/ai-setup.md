@@ -6,7 +6,7 @@ The implementation supports a syllabus PDF (up to 3 MB/50 pages), syllabus text,
 
 ## What you and your team need to do
 
-1. **Use the real Campfire app.** Your team must provide login, the configured `src/supabaseClient.js`, user profiles, the supplied shared database schema, and the access policies described in `syllabus-teachback-handoff.md`. Mount `SyllabusTracker` from `src/features/syllabus` in that app. The demo configuration aliases Supabase to fake data, so do not use it for the live application.
+1. **Use the real Campfire app.** The shared app now includes sign-in, profiles, rooms, and the existing `src/supabaseClient.js`. Configure the two public Supabase variables from `.env.example`, enable anonymous sign-ins, and apply the five repository migrations in order. In a signed-in room, choose **Open syllabus**. The separate demo configuration uses fake data and never calls the live AI.
 2. **Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey).** Check the model access and quota available to your Google project. You do not need to train or fine-tune anything. Do not paste the API key into chat, GitHub, or frontend code.
 3. **Put the key in Vercel → your Campfire project → Settings → Environment Variables.** Name it `GEMINI_API_KEY`, paste the key as its value, and enable the environments where you need it. Save and redeploy. For local live development, put the same settings in a `.env.local` file in the repository root; that file is ignored by Git. Configure these server values:
 
@@ -20,7 +20,7 @@ The implementation supports a syllabus PDF (up to 3 MB/50 pages), syllabus text,
    ```
 
    `GEMINI_MODEL` is optional and defaults to `gemini-2.5-flash`; choose a compatible text/PDF Gemini model available to your project. The Supabase settings must point to the same project as the host browser client. The service-role key and signing secret stay on the server. Do not prefix server secrets with `VITE_`. Your team's existing client controls its own browser configuration.
-4. **Run the server routes.** Use `vercel dev` with the real host app, or deploy that app on Vercel and redeploy after changing environment variables. The normal Vite dev server cannot execute `/api` functions. This repository's default entry is still the separate challenge demo until your team mounts the real tracker.
+4. **Run the server routes.** Use `vercel dev` with the real app, or deploy on Vercel and redeploy after changing environment variables. The normal Vite dev server cannot execute `/api` functions. The default entry now opens the real app; the challenge demo remains at `/challenge-demo.html`, and the separate syllabus demo never makes AI calls.
 5. **Test while signed in.** Create/join a room, choose Add syllabus → Upload PDF, select a small readable syllabus, and select Analyze PDF. Review and save topics. Teach one topic and answer the follow-up. Confirm status changes for another room member and that direct browser edits cannot mark topics verified.
 
 ## How the AI works

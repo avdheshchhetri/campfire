@@ -1,10 +1,10 @@
 # Person A · Syllabus upload and AI teach-back tracker
 
-This is a complete React/Tailwind feature module plus two Vercel Node functions. It uses the shared tables exactly as supplied: **no schema migrations or table/column changes are included**. The existing challenge and phone-presence features remain separate.
+This is a complete React/Tailwind feature module plus two Vercel Node functions. It uses the shared tables exactly as supplied: **no shared table/column changes are included**; the fifth migration restricts teaching permissions. The existing challenge and phone-presence features remain separate.
 
 ## Files and mounting
 
-Import the named `supabase` client that your host app already exports from `src/supabaseClient.js`. This file is intentionally not recreated. The host app must sign users in and create their `profiles` rows before showing room forms.
+Import the named `supabase` client that your host app already exports from `src/supabaseClient.js`. This file is intentionally not recreated. The merged host app already signs users in and creates their `profiles` rows. The protected `/room/:roomId/syllabus` route mounts the upload, dashboard, and teaching views.
 
 ```jsx
 import { SyllabusTracker } from './features/syllabus';
@@ -39,7 +39,7 @@ node --test src/campfire/section-b.test.mjs
 
 The separate syllabus preview is clearly labeled and uses in-memory Supabase/AI doubles from `demo/syllabus/`. It makes no AI requests and requires no credentials. Its assessment accepts the word `example` to exercise the success state; it does not judge knowledge. Its parser splits pasted text into lines. Selecting a PDF exercises file reading, then displays a clear live-setup requirement instead of pretending to analyze the file. Switching rooms lets you try the Create/Join forms; the seeded room code is `FIRE42`. Reload resets the demo. The demo alias exists only in `vite.syllabus-demo.config.ts` and Vitest, not the production configuration.
 
-The repository's default Vite entry remains the existing challenge demo. To run the real tracker, mount it in the host application with its real `src/supabaseClient.js`, then use `vercel dev` or a Vercel deployment. Plain `vite` serves the UI but does not execute Vercel functions. Do not deploy the syllabus demo configuration as the real application.
+The repository's default entry is now the merged Campfire app. Open a room and choose Open syllabus, using `vercel dev` or a Vercel deployment for real API execution. Plain `vite` serves the UI but does not execute Vercel functions. Do not deploy the syllabus demo configuration as the real application.
 
 ## Server configuration
 
@@ -90,23 +90,17 @@ Returns `{ "verified": true, "feedback": "Brief assessment", "status": "verified
 
 Updates compare the original status/timestamp to avoid overwriting another teacher's progress, and membership is checked again after the AI call. Successful or failed evaluation rotates the timestamp to consume the attempt. Already verified topics reject new teaching and never downgrade. An expired or superseded attempt returns 410/409 and the UI offers a fresh explanation. No teaching-session tables or new columns are used.
 
-## Required host access policies — no policies are applied by this module
+## Shared-app database integration
 
-The supplied schema alone does not secure data. The backend owner must provide RLS/grants consistent with the following contracts:
+Apply the repository's five migrations in order. The original columns are preserved. The fifth migration removes authenticated UPDATE/DELETE privileges on existing topics and uses a restrictive INSERT policy requiring untouched status with null teaching attribution. The server-only service role can update status after API authorization; clients cannot award themselves verification or rename verified topics to transfer credit.
 
-- `profiles`: the authenticated user's profile exists before room creation (foreign keys require it).
-- `rooms`: authenticated users can insert with `created_by = auth.uid()` and select their newly created room before the membership insert. Members can read their room. Joining through the requested direct client lookup also requires signed-in users to discover the room metadata by code.
-- `room_members`: users can insert only their own `user_id` into rooms eligible for joining; members can read their own membership for server authorization. The six-character code is a discovery convenience in this direct-client design, not an enforceable secret access credential. For invite-only rooms, a backend join RPC is necessary to validate code possession; that lies outside this unchanged-schema/two-route module. Do not solve joining by turning RLS off.
-- `syllabus_topics`: members can select room topics and insert new rows only with `status = 'untouched'` and null teaching attribution. **Deny direct authenticated updates to status/teaching attribution** so users cannot forge verification. Teaching updates go through the service-role client only after the API validates the caller. Deny or appropriately restrict deletion; otherwise users could erase a verified topic and recreate it. Service keys must never appear in browser configuration.
-- The two existing challenge tables are not read or written by this module.
-
-Room creation uses two inserts because the supplied schema has no transactional create-room RPC. If membership insertion fails, the mounted form retains the created room and retries that membership instead of making another room; it displays the room code for recovery after reload. A network failure after a successful write but before the response can still leave a room requiring manual recovery. This is documented rather than introducing an unrequested database function.
+Both standalone room forms now call the host's existing `create_room` and `join_room` RPCs. Creation atomically inserts the room and owner membership, generates the host's ten-character code, and retries a failed post-create room read without duplicating the room. Joining accepts the host's ten-character codes and older six-character codes, is case-insensitive/idempotent, and checks code possession on the server. The main app continues using the team's existing landing forms. Direct room/member inserts remain blocked. These RPCs use Supabase JS and do not change any shared columns.
 
 Enable Postgres Changes for `syllabus_topics` if immediate dashboard updates are desired. Ten-second polling provides a fallback even without that publication. The dashboard displays red/amber/green cards with explicit text labels. The upcoming-exam banner uses calendar days in the browser timezone, includes today through seven days ahead, and lists every unverified topic. Past exams do not trigger that banner.
 
 ## Acceptance checks before a live demo
 
-Automated tests cover signed-token tampering/expiry, AI-output validation, two-stage state transitions, status conflicts, import deduplication, room forms and membership retry, teach UI, and exam warnings. Supabase and Gemini calls in the new module's tests are mocked; no paid calls or hosted writes were made.
+Automated tests cover signed-token tampering/expiry, AI-output validation, two-stage state transitions, status conflicts, import deduplication, room forms and post-create read retry, teach UI, and exam warnings. Supabase and Gemini calls in the new module's tests are mocked; no paid AI calls or hosted database writes were made.
 
 With two real signed-in users and the host policies configured: create and join a room; paste a syllabus; verify that both dashboards update; teach a topic, answer correctly/incorrectly, and observe status/attribution; submit simultaneously to check conflict handling; deny outsiders; attempt a direct status update and confirm it fails; check the browser network bundle contains no Google/service-role/signing keys. Confirm model availability, account billing, and Vercel function execution in the actual project.
 
