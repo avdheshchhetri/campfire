@@ -88,6 +88,27 @@ describe.sequential('database authorization and lifecycle',()=>{
    await asUser(ids[6]); expect((await snapshot()).clues).toHaveLength(0); await expect(submit('2')).rejects.toThrow();
    await asUser(ids[0]); await db.query('select cf_cancel($1,$2)',[room,session]); await expect(start()).rejects.toThrow('3–6');
  });
+ it('saves generated rounds atomically, keeps answers private and preserves practice puzzles',async()=>{
+   await db.exec('reset role');
+   await db.query('delete from session_presence where user_id=$1',[ids[6]]);
+   const topic='30000000-0000-0000-0000-000000000001';
+   await db.query('insert into syllabus_topics(id,room_id,title) values($1,$2,$3)',[topic,room,'Recursion']);
+   const payload={full_answer:'42',clues:[{clue_text:'First partial clue',order_index:0},{clue_text:'Second partial clue',order_index:1},{clue_text:'Third partial clue',order_index:2}]};
+   const save=()=>db.query<{id:string}>('select cf_save_generated($1,$2,$3,$4,$5::jsonb) as id',[room,session,ids[0],topic,JSON.stringify(payload)]);
+   await asUser(ids[0]); await expect(save()).rejects.toThrow();
+   await db.exec('reset role; set role service_role');
+   const first=(await save()).rows[0].id; expect((await save()).rows[0].id).toBe(first);
+   for(const id of ids.slice(0,6)) {
+     await asUser(id); const value=await snapshot();
+     expect(value.challenge.title).toBe('Recursion'); expect(value.clues).toHaveLength(1);
+     expect(value.challenge).not.toHaveProperty('full_answer');
+     expect(value.clues.map((clue:any) => clue.clue_text)).not.toContain('42');
+     await expect(db.query('select answers from cf_private.puzzles')).rejects.toThrow();
+   }
+   expect(await submit('wrong')).toBe(false); expect(await submit(' 42 ')).toBe(true);
+   await asUser(ids[0]); await start(); expect((await snapshot()).challenge.title).not.toBe('Recursion');
+   await db.query('select cf_cancel($1,$2)',[room,session]);
+ });
  it('rejects ended sessions',async()=>{
    await db.exec('reset role'); await db.query('update sessions set is_active=false where id=$1',[session]);
    await asUser(ids[0]); await expect(start()).rejects.toThrow(); await expect(submit('2')).rejects.toThrow();

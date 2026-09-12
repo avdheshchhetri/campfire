@@ -204,3 +204,7 @@ Open the room dashboard and choose **Open syllabus**. The module supports PDF (3
 Set `GEMINI_API_KEY` in **Vercel → campfire → Settings → Environment Variables**, then redeploy. For local live development, put it in the ignored root `.env.local` and use `vercel dev`. Configure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `TEACHING_SIGNING_SECRET` there as well. `GEMINI_MODEL` optionally overrides the default `gemini-2.5-flash`.
 
 See [AI activation instructions](docs/ai-setup.md) and [Section A handoff](docs/syllabus-teachback-handoff.md). The isolated, simulated UI demo remains available with `npm run dev:syllabus` at `/syllabus-demo.html`; it does not call Gemini even when a key is configured. `npm run build:syllabus-demo` verifies that entry separately.
+
+## Gemini challenge generation
+
+Live sessions now offer **Generate with Gemini** using a room syllabus topic. See [Gemini setup and integration](docs/gemini-challenge-setup.md) for the server-only environment variables, new migration, API contracts, and demo steps. The practice puzzle bank remains available; no Claude route is included.

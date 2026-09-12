@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
+import { StartSessionButton } from '../campfire/SharedScreen.jsx';
 import { ArrowRight, BookOpen, CalendarDays, Check, Copy, Flame, Puzzle, Trophy } from 'lucide-react';
 
 export default function RoomDashboard() {
   const { room, activeSession } = useOutletContext();
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
   async function copyCode() {
@@ -17,8 +19,8 @@ export default function RoomDashboard() {
       {room.exam_date && <p className="flex items-center gap-2 text-sm muted"><CalendarDays size={17} />Exam day: {new Date(`${room.exam_date}T12:00:00`).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>}
       <div className="feature-grid">
         <section className="feature-card"><BookOpen className="text-[#426348]" size={27} strokeWidth={1.5} /><h2>Your syllabus</h2><p>Upload a syllabus PDF, build your shared learning map, and teach topics back to Gemini.</p><Link className="button mt-7" to={`/room/${room.id}/syllabus`}>Open syllabus<ArrowRight size={17} /></Link></section>
-        <section className="feature-card campfire-card"><Flame className="text-[#b74724]" size={29} strokeWidth={1.5} /><span className="coming-soon">{activeSession ? 'Session available' : 'Coming soon'}</span><h2>The campfire</h2><p>Put your phones down and give your attention to the group.</p>{activeSession ? <Link className="button mt-7" to={`/room/${room.id}/session/${activeSession.id}`}>Open session<ArrowRight size={17} /></Link> : <div className="placeholder-note">Your focus sessions will gather here.</div>}</section>
-        <section className="feature-card"><Puzzle className="text-[#7e6287]" size={27} strokeWidth={1.5} /><span className="coming-soon">Coming soon</span><h2>Shared challenges</h2><p>Trade clues, connect the dots, and find the answer together.</p><div className="placeholder-note">A little challenge is on its way.</div></section>
+        <section className="feature-card campfire-card"><Flame className="text-[#b74724]" size={29} strokeWidth={1.5} /><span className="coming-soon">{activeSession ? 'Session available' : 'Ready to start'}</span><h2>The campfire</h2><p>Put your phones down and give your attention to the group.</p>{activeSession ? <Link className="button mt-7" to={`/room/${room.id}/session/${activeSession.id}`}>Open session<ArrowRight size={17} /></Link> : <div className="mt-7"><StartSessionButton roomId={room.id} onStarted={sessionId => navigate(`/room/${room.id}/session/${sessionId}`)} /></div>}</section>
+        <section className="feature-card"><Puzzle className="text-[#7e6287]" size={27} strokeWidth={1.5} /><span className="coming-soon">Gemini</span><h2>Shared challenges</h2><p>Generate a puzzle from your syllabus, trade clues, and solve it together.</p>{activeSession ? <Link className="button mt-7" to={`/room/${room.id}/session/${activeSession.id}`}>Open challenges<ArrowRight size={17} /></Link> : <p className="placeholder-note">Start a session, then invite 3–6 teammates to join.</p>}</section>
       </div>
     </div>
   );
