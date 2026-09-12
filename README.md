@@ -19,6 +19,12 @@ The Vite entry point runs a labeled local challenge demo with simulated particip
 
 See [challenge-engine handoff](docs/challenge-engine-handoff.md) for component props, migration setup, security boundaries, and live testing instructions. The three included puzzles cover circuits, arithmetic mean, and logic.
 
+## Syllabus and AI teach-back feature (Person A)
+
+The new module in `src/features/syllabus/` includes Create/Join Room, syllabus text parsing and review, two-stage AI teach-back, and a topic dashboard. Server-only Gemini calls live in `api/parse-syllabus.js` and `api/verify-teaching.js`. The shared schema is unchanged, and the host's existing `src/supabaseClient.js` is required for live use.
+
+Run `pnpm run dev:syllabus` and open `/syllabus-demo.html` for a separately labeled local UI demo. See [Person A handoff](docs/syllabus-teachback-handoff.md) for full integration, environment, access-policy, and API details.
+
 ## Existing phone-presence feature
 
 See `docs/section-b-handoff.md` for component props, expected database fields, access policies, Realtime setup, integration responsibilities, and known timing limits.

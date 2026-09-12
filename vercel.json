@@ -1,0 +1,7 @@
+{
+  "framework": "vite",
+  "functions": {
+    "api/parse-syllabus.js": { "maxDuration": 60 },
+    "api/verify-teaching.js": { "maxDuration": 60 }
+  }
+}
