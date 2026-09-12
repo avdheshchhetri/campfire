@@ -1,8 +1,10 @@
-# Campfire — Section D
+# Campfire
 
 A group study app built with React, Vite, Tailwind CSS, React Router, and Supabase. **Section D** is the app shell, navigation, authentication, room flow, leaderboard, and integration scaffold. It includes anonymous sign-in, first-login profiles, room creation/joining/leaving, shared navigation, session status, and a leaderboard. The room dashboard and active-session routes contain integration placeholders.
 
 The application is named **Campfire**; the repository and planned Vercel project are named **campfire**. Existing Section B code in `src/campfire/` and `docs/section-b-handoff.md` has been preserved. That module needs the integration work described below before it can replace the session placeholder.
+
+The Section C collaborative challenge engine lives in `src/features/challenges/`. Groups of 3–6 receive private puzzle pieces, discuss their clues, and submit a shared answer checked on the server. Its standalone demo is retained at `/challenge-demo.html`; it uses simulated participants and local state, without connecting to Supabase. The three included puzzles cover circuits, arithmetic mean, and logic. See the [challenge-engine handoff](docs/challenge-engine-handoff.md) for component props, security boundaries, and live integration checks.
 
 ## Run locally
 
@@ -33,7 +35,7 @@ npm run build
 npm run preview
 ```
 
-The production build is written to `dist/`. `npm test` runs the React/Vitest checks and Node helper tests, including the preserved Campfire module's helper tests.
+The production build is written to `dist/` and includes both the app shell and `/challenge-demo.html`. `npm run build` checks the challenge TypeScript before bundling. `npm test` runs the React/Vitest checks, Node helper tests (including the preserved Campfire module), and challenge adapter/database tests.
 
 ### Environment values and sharing
 
@@ -57,6 +59,8 @@ Enable **Anonymous Sign-Ins** in the project's Auth settings. Anonymous users re
 
 1. `supabase/migrations/20260912000100_shared_schema.sql` is the exact schema supplied for the team: eight tables and the original leaderboard view.
 2. `supabase/migrations/20260912000200_access_and_room_functions.sql` adds access policies, safe room functions, indexes, and `security_invoker` on that same view. It does not change the shared columns or leaderboard calculation.
+3. `supabase/migrations/20260912000300_challenge_engine.sql` adds the challenge RPCs, private puzzle templates and answers, and clue ownership policies. It is the unchanged Section C migration, renamed to run after the shared schema and access policies.
+4. `supabase/migrations/20260912000400_challenge_permissions.sql` revokes the earlier column-level challenge update grants so browser clients must use the challenge RPCs.
 
 For a fresh hosted database, use the Supabase CLI from the repository root:
 
@@ -75,7 +79,9 @@ npx supabase db push
 
 `migration repair` updates migration history; it does not create or verify schema objects. Do not mark a partial or different schema as applied. Do not rerun the first migration over existing tables. The [Supabase migration guide](https://supabase.com/docs/guides/deployment/database-migrations) explains this workflow.
 
-Alternatively, use the project's SQL Editor: run the first file once on an empty database, then run the second file once. If the original schema already exists exactly, run only the second. If you later switch to CLI migrations, verify the database and mark each successfully executed migration as applied before using `db push`.
+If the older Section C migration (`202609120001_challenge_engine.sql`) was already applied, reconcile its recorded version and the actual shared/access schema before using this sequence. Do not blindly rerun it under the new filename or mark unapplied dependencies as complete. Verify the existing schema and migration history, apply missing dependencies in a reviewed migration plan, and ensure the final permissions migration runs last.
+
+Alternatively, use the project's SQL Editor: run all four files once in the listed order on an empty database. If the original shared schema already exists exactly, begin with the second file. If you later switch to CLI migrations, verify the database and mark each successfully executed migration as applied before using `db push`.
 
 For optional local Supabase development, install Docker and run `npx supabase start`. `supabase/config.toml` enables anonymous sign-ins locally. Use the local URL/public key reported by the CLI in `.env.local`; the hosted Auth setting must be enabled separately.
 
@@ -90,11 +96,11 @@ For optional local Supabase development, install Docker and run `npx supabase st
 
 Both RPCs require a signed-in user with a profile. Direct browser insertion into `rooms` or `room_members` is blocked, so clients cannot join a room by guessing its UUID.
 
-RLS protects all eight tables. Members can read their rooms and shared feature data; profiles are visible to their owner and room peers. Only the creator can edit room settings. Presence writes are limited to the requesting user within an accessible room. Feature writes validate referenced sessions/topics and assigned users against the room. The leaderboard respects those same access rules.
+RLS protects all eight tables. Members can read their rooms and shared feature data; profiles are visible to their owner and room peers. Only the creator can edit room settings. Presence writes are limited to the requesting user within an accessible room. Feature writes validate referenced sessions/topics and assigned users against the room. Challenge clues additionally enforce assigned-user ownership. The leaderboard respects those same access rules.
 
-Browser updates are granted only for mutable fields. Do not send identity/parent fields such as `id`, `room_id`, `session_id` in a presence update, or `challenge_id` in a clue update. Use explicit inserts and updates of allowed fields; an upsert that tries to update protected key columns will fail. The auth provider's `profiles` upsert deliberately uses `ignoreDuplicates: true`, which does not update existing rows.
+Browser updates are granted only for mutable fields. Do not send identity/parent fields such as `id`, `room_id`, or `session_id` in a presence update. Use explicit inserts and updates of allowed fields; an upsert that tries to update protected key columns will fail. Direct browser writes to challenges and clues are revoked; use `cf_start`, `cf_submit`, and `cf_cancel` for challenge actions. The auth provider's `profiles` upsert deliberately uses `ignoreDuplicates: true`, which does not update existing rows.
 
-All room members can read clue rows; `revealed` is currently a UI/data flag, not a secret-delivery boundary. The original foreign keys have no delete cascades. Session-ending permissions, active-session-only presence writes, hidden clue delivery, and any new scoring rules require an agreed integration change when those features are wired in.
+`cf_snapshot` returns only the caller's assigned clues, and direct clue reads enforce the same ownership boundary. Puzzle answers stay in the private database schema and are checked by the server. The original foreign keys have no delete cascades. Session-ending permissions, active-session-only presence writes, and any new scoring rules still require an agreed integration change when those features are wired in.
 
 ## Deploy to Vercel
 
@@ -150,7 +156,7 @@ All routes render inside `AppLayout`, which owns room navigation, leave-room beh
 | Campfire | `src/features/campfire/` | `feature/campfire` |
 | Challenges | `src/features/challenges/` | `feature/challenges` |
 
-Those folders contain only `.gitkeep` markers so Git preserves them. Teammates own their feature folders. The shell owner coordinates shared client/auth/layout changes and migrations. **Ping the integrator before pushing an `App.jsx` import or route edit** so those shared changes can be merged cleanly.
+The syllabus and Campfire feature folders contain `.gitkeep` markers; the challenge folder contains Section C's implementation. The preserved phone-presence module remains in `src/campfire/`. Teammates own their feature folders. The shell owner coordinates shared client/auth/layout changes and migrations. **Ping the integrator before pushing an `App.jsx` import or route edit** so those shared changes can be merged cleanly.
 
 At each agreed checkpoint, the integrator reviews the branch, resolves shared wiring, runs `npm test` and `npm run build`, and checks the feature with the configured database. Merge only validated work to `main`, then confirm its Vercel deployment. Branch merges and deployment monitoring are a team workflow, not an autonomous service included in this scaffold.
 
@@ -174,7 +180,7 @@ Because the original view uses an inner join to topics, rooms with no topics ret
 
 ## Verification
 
-Run `npm test` and `npm run build` before merging. For database regression checks, use a disposable/local database with both migrations applied:
+Run `npm test` and `npm run build` before merging. For database regression checks, use a disposable/local database with all four migrations applied:
 
 ```sh
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
@@ -184,7 +190,7 @@ In PowerShell, use `$env:DATABASE_URL` in place of `"$DATABASE_URL"`.
 
 `DATABASE_URL` here is a local/test PostgreSQL connection string for `psql`, not a Vite environment value. The suite uses plain SQL assertions and rolls back its fixtures; it is not a pgTAP suite for `supabase test db`.
 
-Both migrations and this suite were executed successfully in PGlite, using mocked Supabase auth roles/functions. Checks covered profile idempotence, create/join/leave, all eight RLS-enabled tables, room isolation, cross-room references, presence impersonation, owner-only edits, anonymous access denial, unchanged leaderboard SQL, and fixture rollback. This validates PostgreSQL behavior in the test harness; hosted Supabase Auth/API, Vercel deployment, Realtime, and physical phones still need live integration checks.
+The challenge database tests apply all four migrations in PGlite with mocked Supabase auth roles/functions and run the shared RLS suite. Checks cover profile idempotence, create/join/leave, all eight RLS-enabled tables, room isolation, cross-room references, presence impersonation, owner-only edits, anonymous access denial, unchanged leaderboard SQL, private clues and answers, challenge RPC behavior, and direct challenge-write denial. This validates PostgreSQL behavior in the test harness; hosted Supabase Auth/API, Vercel deployment, Realtime, and physical phones still need live integration checks.
 
 ## A practical 24-hour priority
 

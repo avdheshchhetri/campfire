@@ -1,4 +1,4 @@
--- Run against a disposable/local database with both migrations applied:
+-- Run against a disposable/local database with all four migrations applied:
 -- psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
 -- The test transaction rolls back every fixture and leaves no test users behind.
 begin;
@@ -137,10 +137,40 @@ insert into public.session_presence (session_id, user_id, phone_state)
 values ('20000000-0000-0000-0000-000000000001', auth.uid(), 'down');
 update public.session_presence set phone_state = 'up', updated_at = now()
 where session_id = '20000000-0000-0000-0000-000000000001' and user_id = auth.uid();
+
+-- Challenge clients must use RPCs. Seed these visibility fixtures as the test
+-- owner, then return to Bob's authenticated role for all access assertions.
+reset role;
 insert into public.challenges (id, room_id, session_id, type)
 values ('40000000-0000-0000-0000-000000000001', (select value::uuid from campfire_test_ids where name = 'room_a'), '20000000-0000-0000-0000-000000000001', 'recall');
 insert into public.challenge_clues (challenge_id, assigned_to, clue_text)
 values ('40000000-0000-0000-0000-000000000001', auth.uid(), 'Study cells');
+set local role authenticated;
+
+do $$ begin
+  assert (select count(*) = 1 from public.challenge_clues), 'Assignee must see their own clue';
+  begin
+    insert into public.challenges (room_id, session_id, type)
+    values ((select value::uuid from campfire_test_ids where name = 'room_a'), '20000000-0000-0000-0000-000000000001', 'recall');
+    raise exception 'FAIL: direct challenge insertion accepted';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.challenges set status = 'solved'
+    where id = '40000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL: direct challenge status update accepted';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.challenge_clues set clue_text = 'Changed'
+    where challenge_id = '40000000-0000-0000-0000-000000000001';
+    raise exception 'FAIL: direct clue update accepted';
+  exception when insufficient_privilege then null; end;
+end $$;
+
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
+do $$ begin
+  assert (select count(*) = 1 from public.challenges), 'Room peer must see challenge metadata';
+  assert (select count(*) = 0 from public.challenge_clues), 'Room peer must not see another member''s clue';
+end $$;
 
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000003', true);
 do $$ begin
