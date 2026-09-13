@@ -377,3 +377,16 @@
 @theme { --font-sans: "IBM Plex Sans", sans-serif; --font-display: "Fraunces", serif; }
 
 h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
+
+/* Learning-map status colors. */
+.dark {
+  --learning-untouched-surface: #321b23;
+  --learning-untouched-text: #fda4af;
+  --learning-untouched-border: #743445;
+  --learning-taught-surface: #302619;
+  --learning-taught-text: #fcd590;
+  --learning-taught-border: #775d32;
+  --learning-verified-surface: #142d24;
+  --learning-verified-text: #86efac;
+  --learning-verified-border: #32684e;
+}

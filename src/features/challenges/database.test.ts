@@ -86,7 +86,7 @@ describe.sequential('database authorization and lifecycle',()=>{
    await asUser(ids[0]); await start();
    await db.exec('reset role'); await db.query('insert into room_members values($1,$2)',[room,ids[6]]); await db.query('insert into session_presence(session_id,user_id) values($1,$2)',[session,ids[6]]);
    await asUser(ids[6]); expect((await snapshot()).clues).toHaveLength(0); await expect(submit('2')).rejects.toThrow();
-   await asUser(ids[0]); await db.query('select cf_cancel($1,$2)',[room,session]); await expect(start()).rejects.toThrow('3–6');
+   await asUser(ids[0]); await db.query('select cf_cancel($1,$2)',[room,session]); await expect(start()).rejects.toThrow('1–6');
  });
  it('saves generated rounds atomically, keeps answers private and preserves practice puzzles',async()=>{
    await db.exec('reset role');
@@ -124,4 +124,29 @@ it('allows only self avatar updates and rejects unknown avatar keys', async () =
   expect((await db.query<{avatar_key:string}>('select avatar_key from profiles where id=$1',[ids[1]])).rows[0].avatar_key).toBe('initials');
   await asUser(ids[0]);
   await expect(db.query("update profiles set avatar_key='invalid' where id=$1",[ids[0]])).rejects.toThrow();
+});
+
+it('supports solo and pair generated rounds without losing a required clue, and credits wins once', async () => {
+  await db.exec('reset role');
+  await db.query('update sessions set is_active=true where id=$1',[session]);
+  await db.query("update challenges set status='cancelled' where session_id=$1 and status='active'",[session]);
+  await db.query('delete from session_presence where session_id=$1',[session]);
+  await db.query('insert into session_presence(session_id,user_id) values($1,$2)',[session,ids[0]]);
+  const topic='30000000-0000-0000-0000-000000000001';
+  const payload={full_answer:'42',clues:[0,1,2].map(order_index=>({clue_text:`Required clue ${order_index}`,order_index}))};
+  const save=()=>db.query('select cf_save_generated($1,$2,$3,$4,$5::jsonb)',[room,session,ids[0],topic,JSON.stringify(payload)]);
+  await db.exec('set role service_role'); await save();
+  await asUser(ids[0]); expect((await snapshot()).clues).toHaveLength(3);
+  const before=(await db.query<{solved_count:bigint,user_id:string}>('select * from cf_progress($1)',[room])).rows.find(row=>row.user_id===ids[0])!;
+  await submit('42'); await submit('42');
+  const after=(await db.query<{solved_count:bigint,user_id:string}>('select * from cf_progress($1)',[room])).rows.find(row=>row.user_id===ids[0])!;
+  expect(Number(after.solved_count)).toBe(Number(before.solved_count)+1);
+  await db.exec('reset role');
+  await db.query('insert into session_presence(session_id,user_id) values($1,$2)',[session,ids[1]]);
+  await db.exec('set role service_role'); await save();
+  const clues=[];
+  for (const id of ids.slice(0,2)) { await asUser(id); clues.push(...(await snapshot()).clues); }
+  expect(new Set(clues.map(clue=>clue.clue_text)).size).toBe(3);
+  await asUser('99999999-9999-4999-8999-999999999999');
+  await expect(db.query('select * from cf_progress($1)',[room])).rejects.toThrow();
 });

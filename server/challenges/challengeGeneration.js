@@ -36,12 +36,13 @@ export function validateChallenge(value, status = 502) {
 
 export async function challengeContext(req, body) {
   const roomId = uuid(body.roomId, 'Room ID');
-  const subject = text(body.subject, 'Subject', 200);
+  const subject = typeof body.subject === 'string' ? body.subject.trim() : '';
+  if (subject.length > 200) throw new ApiError(400, 'Subject is too long.');
   const topicTitle = text(body.topicTitle, 'Topic title', 200);
   const { client, user } = await authorize(req, roomId);
   const room = await client.from('rooms').select('subject').eq('id', roomId).maybeSingle();
   if (room.error) throw new ApiError(503, 'Could not load the room.');
-  if (!room.data || room.data.subject?.trim() !== subject) throw new ApiError(400, 'Use the room’s current subject tag.');
+  if (!room.data || (room.data.subject?.trim() || '') !== subject) throw new ApiError(400, 'Use the room’s current subject tag.');
   const topic = await client.from('syllabus_topics').select('id,title').eq('room_id', roomId)
     .eq('title', topicTitle).limit(1).maybeSingle();
   if (topic.error) throw new ApiError(503, 'Could not load the syllabus topic.');
@@ -55,7 +56,7 @@ export async function challengeContext(req, body) {
     const roster = await client.from('session_presence').select('user_id').eq('session_id', sessionId);
     if (roster.error) throw new ApiError(503, 'Could not check session participants.');
     if (!roster.data?.some(person => person.user_id === user.id)) throw new ApiError(403, 'Join the session before starting a challenge.');
-    if (roster.data.length < 3 || roster.data.length > 6) throw new ApiError(409, 'A challenge needs 3–6 session participants.');
+    if (roster.data.length < 1 || roster.data.length > 6) throw new ApiError(409, 'A challenge needs 1–6 session participants.');
   }
   return { roomId, sessionId, subject, topicTitle: topic.data.title, topicId: topic.data.id, user };
 }
@@ -83,7 +84,8 @@ Return only the object defined by the JSON schema.`;
         contents: [{ role: 'user', parts: [{ text: JSON.stringify({ subject, topicTitle }) }] }],
         generationConfig: {
           maxOutputTokens: 8192,
-          responseFormat: { text: { mimeType: 'application/json', schema: challengeSchema } },
+          responseMimeType: 'application/json',
+          responseJsonSchema: challengeSchema,
           ...(model.startsWith('gemini-3') ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
         },
       }),

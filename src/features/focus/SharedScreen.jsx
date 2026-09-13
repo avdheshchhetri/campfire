@@ -1,6 +1,7 @@
+import { useSessionClock } from './FocusClockProvider';
 import Avatar from '../auth/Avatar';
-import { useEffect, useRef, useState } from 'react';
-import { endSession, startSession, watchSession } from './campfireApi.js';
+import { useRef, useState } from 'react';
+import { endSession, startSession } from './campfireApi.js';
 
 export function StartSessionButton({ roomId, onStarted }) {
   const [busy, setBusy] = useState(false);
@@ -30,54 +31,24 @@ export default function SharedScreen(props) {
 }
 
 function SessionDisplay({ sessionId, participants = [], canEnd = false, onEnded }) {
-  const [session, setSession] = useState(null);
-  const [rows, setRows] = useState([]);
-  const [online, setOnline] = useState(new Set());
-  const [status, setStatus] = useState('connecting');
-  const [syncError, setSyncError] = useState('');
+  const { session, rows, online, status, syncError, elapsed, finishClock } = useSessionClock(sessionId, participants);
   const [endError, setEndError] = useState('');
   const [ending, setEnding] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [visible, setVisible] = useState(() => !document.hidden);
   const endLock = useRef(false);
-  const clock = useRef({ total: 0, since: null });
-
-  useEffect(() => watchSession(sessionId, {
-    onSnapshot: (nextSession, nextRows) => { setSession(nextSession); setRows(nextRows); },
-    onOnline: setOnline,
-    onStatus: (nextStatus, message = '') => { setStatus(nextStatus); setSyncError(message); },
-  }), [sessionId]);
-  useEffect(() => {
-    const change = () => setVisible(!document.hidden);
-    document.addEventListener('visibilitychange', change);
-    return () => document.removeEventListener('visibilitychange', change);
-  }, []);
 
   const byUser = new Map(rows.map(row => [row.user_id, row.state]));
   const roster = [...new Map(participants.map(person => [person.user_id, person])).values()];
   const blockers = roster.filter(person => !online.has(person.user_id) || byUser.get(person.user_id) !== 'down');
-  const running = Boolean(session?.is_active && visible && status === 'ready'
+  const running = Boolean(session?.is_active && status === 'ready'
     && !ending && roster.length > 0 && blockers.length === 0);
-
-  useEffect(() => {
-    if (!running) return;
-    const current = clock.current;
-    current.since = performance.now();
-    const tick = setInterval(() => setElapsed(current.total + performance.now() - current.since), 100);
-    return () => {
-      clearInterval(tick);
-      current.total += performance.now() - current.since;
-      current.since = null;
-      setElapsed(current.total);
-    };
-  }, [running]);
 
   async function finish() {
     if (endLock.current) return;
     endLock.current = true; setEnding(true); setEndError('');
     try {
       await endSession(sessionId);
-      setSession(current => ({ ...current, is_active: false }));
+      finishClock();
+
       onEnded?.(sessionId);
     } catch (error) { setEndError(error.message); }
     finally { endLock.current = false; setEnding(false); }

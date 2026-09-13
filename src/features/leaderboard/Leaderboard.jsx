@@ -35,6 +35,11 @@ export default function Leaderboard() {
         if (!current) return;
         if (result.error) throw result.error;
         let rows = result.data ?? [];
+        // Older deployments retain the shared totals until this RPC is installed.
+        try {
+          const personal = await supabase.rpc('cf_progress', { p_room: roomId });
+          if (!personal.error && Array.isArray(personal.data)) rows = personal.data;
+        } catch { /* Existing deployments still support the original view. */ }
 
         // The schema's view uses an inner join to syllabus_topics, so a room
         // without topics returns no rows. Keep its members visible at zero.
@@ -73,8 +78,13 @@ export default function Leaderboard() {
         }
       }
     }
-    load();
-    return () => { current = false; };
+    let loading = false;
+    const refresh = async () => { if (loading) return; loading = true; try { await load(); } finally { loading = false; } };
+    void refresh();
+    const timer = setInterval(refresh, 5000);
+    const visible = () => { if (!document.hidden) void refresh(); };
+    document.addEventListener('visibilitychange', visible);
+    return () => { current = false; clearInterval(timer); document.removeEventListener('visibilitychange', visible); };
   }, [roomId, revision]);
 
   // Do not flash another room's results before the effect clears its state.
@@ -85,8 +95,8 @@ export default function Leaderboard() {
   const isLoading = state.status === 'loading' || state.roomId !== roomId;
   const isRefreshing = state.status === 'refreshing';
   const totalTopics = rows[0]?.total_topics ?? 0;
-  const verifiedCount = rows[0]?.verified_count ?? 0;
-  const progress = rows[0]?.progress ?? 0;
+  const verifiedCount = rows[0]?.shared_verified_count ?? rows[0]?.verified_count ?? 0;
+  const progress = totalTopics ? Math.min(100, verifiedCount / totalTopics * 100) : 0;
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8">
@@ -191,7 +201,7 @@ export default function Leaderboard() {
                     </span>
                     <div className="min-w-0">
                       <p className="break-words text-sm font-semibold">{member.display_name}</p>
-                      <p className="mt-1 text-xs text-muted dark:text-[#968b7b]">Growing together</p>
+                      <p className="mt-1 text-xs text-muted dark:text-[#968b7b]">{member.solved_count === undefined ? 'Growing together' : `${member.verified_count} topics verified · ${member.solved_count} puzzles solved`}</p>
                     </div>
                   </div>
                   <div className="col-start-2 row-start-2 sm:col-start-auto sm:row-start-auto">

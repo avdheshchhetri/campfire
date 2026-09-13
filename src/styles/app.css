@@ -162,3 +162,8 @@ textarea { font-family: inherit; }
 :root:not(.dark) .app-shell progress { accent-color: var(--light-success); }
 
 .avatar-options [aria-pressed="true"] { border-color: var(--paint-accent-a6f470); outline: 2px solid var(--paint-accent-a6f470); outline-offset: 2px; }
+
+/* Learning status roles take precedence over legacy utility recoloring. */
+.dark .app-shell .learning-topic[data-topic-status="untouched"] { background: var(--learning-untouched-surface); color: var(--learning-untouched-text); border-color: var(--learning-untouched-border); }
+.dark .app-shell .learning-topic[data-topic-status="taught"], .dark .app-shell [data-exam-notice] { background: var(--learning-taught-surface); color: var(--learning-taught-text); border-color: var(--learning-taught-border); }
+.dark .app-shell .learning-topic[data-topic-status="verified"] { background: var(--learning-verified-surface); color: var(--learning-verified-text); border-color: var(--learning-verified-border); }

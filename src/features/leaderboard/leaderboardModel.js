@@ -17,16 +17,17 @@ export function prepareLeaderboard(rows, sort = 'progress') {
       ...row,
       total_topics: totalTopics,
       verified_count: verifiedCount,
+      score: verifiedCount + count(row.solved_count),
       progress: totalTopics > 0 ? Math.min(100, (verifiedCount / totalTopics) * 100) : 0,
     };
-  }).sort((left, right) => right.verified_count - left.verified_count || byName(left, right));
+  }).sort((left, right) => right.score - left.score || byName(left, right));
 
   let rank = 0;
   let previousScore;
   ranked.forEach((row, index) => {
-    if (row.verified_count !== previousScore) rank = index + 1;
+    if (row.score !== previousScore) rank = index + 1;
     row.rank = rank;
-    previousScore = row.verified_count;
+    previousScore = row.score;
   });
 
   if (sort === 'name-asc') ranked.sort(byName);

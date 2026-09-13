@@ -14,7 +14,7 @@ export function StartChallenge({ subject, topics, busy, disabled, onGenerate }: 
   const lock = useRef(false);
   const selected = topics.find(topic => topic.id === topicId) || topics[0];
   async function generate() {
-    if (lock.current || busy || disabled || !subject || !selected) return;
+    if (lock.current || busy || disabled || !selected) return;
     lock.current = true;
     try { await onGenerate({ subject, topicTitle: selected.title }); }
     finally { lock.current = false; }
@@ -25,9 +25,9 @@ export function StartChallenge({ subject, topics, busy, disabled, onGenerate }: 
       {!topics.length && <option value="">Add a syllabus topic first</option>}
       {topics.map(topic => <option key={topic.id} value={topic.id}>{topic.title}</option>)}
     </select>
-    <button className="cf-primary" disabled={busy || disabled || !subject || !selected} onClick={() => void generate()}>
+    <button className="cf-primary" disabled={busy || disabled || !selected} onClick={() => void generate()}>
       {busy ? 'Preparing challenge…' : 'Generate with Gemini'}
     </button>
-    {!subject && <small>Add a subject tag to this room to generate a puzzle.</small>}
+    {!subject && <small>This room has no subject tag; the selected topic will guide the puzzle.</small>}
   </div>;
 }

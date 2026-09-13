@@ -10,6 +10,7 @@ export default function Account() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [editingPassword, setEditingPassword] = useState(false);
   async function run(action) {
     if (busy) return;
     setBusy(true); setError(''); setMessage('');
@@ -30,10 +31,10 @@ export default function Account() {
       {user.is_anonymous ? <form className="space-y-4" onSubmit={event => { event.preventDefault(); const email = new FormData(event.currentTarget).get('email'); run(async () => { await linkGuestEmail(email); setMessage('Check your email to verify this address. Then return to Account to set a password. Your rooms stay on this profile.'); }); }}>
         <label>Email<input name="email" type="email" autoComplete="email" required disabled={busy} /></label>
         <button className="button" disabled={busy}>Verify email and keep my profile</button>
-      </form> : <form className="space-y-4" onSubmit={event => { event.preventDefault(); const form = event.currentTarget; const password = new FormData(form).get('password'); run(async () => { await setAccountPassword(password); form.reset(); setMessage('Password saved. You can now log in with your email and password.'); }); }}>
+      </form> : editingPassword ? <form className="space-y-4" onSubmit={event => { event.preventDefault(); const form = event.currentTarget; const password = new FormData(form).get('password'); run(async () => { await setAccountPassword(password); form.reset(); setEditingPassword(false); setMessage('Password saved. You can now log in with your email and password.'); }); }}>
         <label>Set or change password<input name="password" type="password" autoComplete="new-password" required minLength={8} disabled={busy} /></label>
         <button className="button" disabled={busy}>Save password</button>
-      </form>}
+      </form> : <button className="button button-secondary" onClick={() => setEditingPassword(true)}>Set or change password</button>}
       {user.is_anonymous && <p className="muted text-sm">Signing out before upgrading can leave you unable to recover this guest profile. Upgrade first to keep access.</p>}
       <button className="button button-secondary" disabled={busy} onClick={() => run(async () => { await logoutAccount(); })}>Sign out on this device</button>
     </>}

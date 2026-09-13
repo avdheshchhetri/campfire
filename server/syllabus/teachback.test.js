@@ -46,7 +46,7 @@ describe('Gemini output boundaries', () => {
     const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"question":"Why?"}' }] } }] }) });
     vi.stubGlobal('fetch', fetcher);
     expect(await geminiJSON('Ask a question', { topic: 'Trees' })).toEqual({ question: 'Why?' });
-    expect(fetcher.mock.calls[0][0]).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent');
+    expect(fetcher.mock.calls[0][0]).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent');
     expect(fetcher.mock.calls[0][1].headers['x-goog-api-key']).toBe('test-only-key');
     expect(JSON.parse(fetcher.mock.calls[0][1].body).generationConfig.responseMimeType).toBe('application/json');
     fetcher.mockResolvedValue({ ok: true, json: async () => ({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [] } }] }) });
@@ -71,7 +71,7 @@ describe('Gemini output boundaries', () => {
     vi.stubGlobal('fetch', fetcher);
     await expect(geminiJSON('Ask', {})).rejects.toThrow('invalid JSON');
     expect(fetcher.mock.calls[0][0]).toContain('/gemini-3.5-flash:generateContent');
-    expect(JSON.parse(fetcher.mock.calls[0][1].body).generationConfig.thinkingConfig).toBeUndefined();
+    expect(JSON.parse(fetcher.mock.calls[0][1].body).generationConfig.thinkingConfig).toEqual({ thinkingLevel: 'low' });
   });
 });
 

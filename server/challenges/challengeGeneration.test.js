@@ -20,7 +20,8 @@ describe('Gemini challenge generation', () => {
     expect(url).not.toContain('server-only-test-key');
     expect(options.headers['x-goog-api-key']).toBe('server-only-test-key');
     const request = JSON.parse(options.body);
-    expect(request.generationConfig.responseFormat.text.schema.required).toEqual(['full_answer', 'clues']);
+    expect(request.generationConfig.responseMimeType).toBe('application/json');
+    expect(request.generationConfig.responseJsonSchema.required).toEqual(['full_answer', 'clues']);
     expect(request.contents[0].parts[0].text).toBe(JSON.stringify({ subject: 'CS', topicTitle: 'Recursion' }));
     expect(request.systemInstruction.parts[0].text).toContain('Medicine');
     expect(request.systemInstruction.parts[0].text).toContain('design or creative');

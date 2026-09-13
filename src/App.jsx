@@ -1,3 +1,4 @@
+import { FocusClockProvider } from './features/focus/FocusClockProvider';
 import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './features/auth/AuthContext';
 import AppLayout, { RequireRoom } from './components/layout/AppLayout';
@@ -14,7 +15,7 @@ const Router = import.meta.env.VITE_GITHUB_PAGES === 'true' ? HashRouter : Brows
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
+      <FocusClockProvider><Router>
         <Routes>
           <Route element={<AppLayout />}>
             <Route index element={<Landing />} />
@@ -30,7 +31,7 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
-      </Router>
+      </Router></FocusClockProvider>
     </AuthProvider>
   );
 }

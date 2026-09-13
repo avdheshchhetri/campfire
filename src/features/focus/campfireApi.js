@@ -55,7 +55,7 @@ export function watchSession(sessionId, { userId, onSnapshot, onOnline, onStatus
       while (dirty && !closed && connected) {
         dirty = false;
         const [session, presence] = await Promise.all([
-          supabase.from('sessions').select('id,is_active,ended_at')
+          supabase.from('sessions').select('id,room_id,is_active,ended_at')
             .eq('id', sessionId).single(),
           supabase.from('session_presence').select('user_id,phone_state')
             .eq('session_id', sessionId),

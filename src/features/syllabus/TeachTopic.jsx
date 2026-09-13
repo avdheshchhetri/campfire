@@ -1,22 +1,34 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { callStudyAPI } from './api.js';
 import { useTopics } from './useTopics.js';
 import { buttonClass, cardClass, ErrorMessage, Field, inputClass, secondaryClass } from './ui.jsx';
 
-export default function TeachTopic({ roomId, initialTopicId = '', onUpdated = () => {} }) {
-  return <TeachForm key={`${roomId}:${initialTopicId}`} roomId={roomId} initialTopicId={initialTopicId} onUpdated={onUpdated} />;
+export default function TeachTopic({ roomId, initialTopicId = '', userId, onUpdated = () => {} }) {
+  return <TeachForm key={`${roomId}:${initialTopicId}`} roomId={roomId} initialTopicId={initialTopicId} userId={userId} onUpdated={onUpdated} />;
 }
 
-function TeachForm({ roomId, initialTopicId, onUpdated }) {
+function TeachForm({ roomId, initialTopicId, userId, onUpdated }) {
   const { topics, loading, error: loadError, refresh } = useTopics(roomId);
-  const [topicId, setTopicId] = useState(initialTopicId);
-  const [explanation, setExplanation] = useState('');
-  const [followup, setFollowup] = useState(null);
-  const [answer, setAnswer] = useState('');
-  const [verdict, setVerdict] = useState(null);
+  const storageKey = userId ? `campfire:teaching:${userId}:${roomId}` : null;
+  const [draft] = useState(() => {
+    try {
+      const saved = storageKey && JSON.parse(sessionStorage.getItem(storageKey));
+      if (saved && Date.now() - saved.savedAt < 30 * 60 * 1000 && (!initialTopicId || saved.topicId === initialTopicId)) return saved;
+    } catch {}
+    return {};
+  });
+  const [topicId, setTopicId] = useState(draft.topicId || initialTopicId);
+  const [explanation, setExplanation] = useState(draft.explanation || '');
+  const [followup, setFollowup] = useState(draft.followup || null);
+  const [answer, setAnswer] = useState(draft.answer || '');
+  const [verdict, setVerdict] = useState(draft.verdict || null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const inFlight = useRef(false);
+  useEffect(() => {
+    if (!storageKey) return;
+    try { sessionStorage.setItem(storageKey, JSON.stringify({ topicId, explanation, followup, answer, verdict, savedAt: Date.now() })); } catch {}
+  }, [storageKey, topicId, explanation, followup, answer, verdict]);
   const selected = topics.find(topic => topic.id === topicId);
   function reset() { setFollowup(null); setAnswer(''); setVerdict(null); setError(''); }
   async function submit(event) {
@@ -45,7 +57,7 @@ function TeachForm({ roomId, initialTopicId, onUpdated }) {
       <form onSubmit={submit} className="mt-5 grid gap-4">
         <Field label="Topic"><select className={inputClass} required value={topicId} disabled={busy || !!followup} onChange={e => { setTopicId(e.target.value); reset(); setExplanation(''); }}><option value="">Choose a topic</option>{topics.map(topic => <option key={topic.id} value={topic.id}>{topic.title} — {topic.status}</option>)}</select></Field>
         <Field label="Your explanation"><textarea className={inputClass} rows={7} required maxLength={10000} value={explanation} disabled={busy || !!followup || selected?.status === 'verified' || !!verdict} onChange={e => setExplanation(e.target.value)} placeholder="The key idea is… For example…" /></Field>
-        {followup && <div className="space-y-4 rounded-xl border border-border dark:border-amber-200 bg-warning-soft dark:bg-amber-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-warning dark:text-amber-800">Taught · One more connection</p><p className="font-sans font-semibold text-xl text-primary dark:text-stone-800">{followup.question}</p><Field label="Your follow-up answer"><textarea autoFocus className={inputClass} rows={4} required maxLength={10000} value={answer} onChange={e => setAnswer(e.target.value)} disabled={busy} /></Field><p className="text-xs text-muted dark:text-stone-500">Answer within 30 minutes. Reloading this page starts a new attempt.</p></div>}
+        {followup && <div className="space-y-4 rounded-xl border border-border dark:border-amber-200 bg-warning-soft dark:bg-amber-50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-warning dark:text-amber-800">Taught · One more connection</p><p className="font-sans font-semibold text-xl text-primary dark:text-stone-800">{followup.question}</p><Field label="Your follow-up answer"><textarea autoFocus className={inputClass} rows={4} required maxLength={10000} value={answer} onChange={e => setAnswer(e.target.value)} disabled={busy} /></Field><p className="text-xs text-muted dark:text-stone-500">Answer within 30 minutes. Your draft is kept in this browser tab when you navigate away.</p></div>}
         <ErrorMessage>{error}</ErrorMessage>
         {verdict && <div role="status" className={`rounded-xl border p-4 ${verdict.verified ? 'border-border dark:border-emerald-200 bg-success-soft dark:bg-emerald-50 text-success dark:text-emerald-900' : 'border-border dark:border-amber-200 bg-warning-soft dark:bg-amber-50 text-warning dark:text-amber-900'}`}><h3 className="font-display font-semibold">{verdict.verified ? 'Understanding verified' : 'Keep building your explanation'}</h3><p className="mt-2 text-sm leading-6">{verdict.feedback}</p></div>}
         {selected?.status === 'verified' ? <p className="text-sm text-success dark:text-emerald-800">Your group has verified this topic. Pick another to continue.</p> : verdict ? <button type="button" className={buttonClass} onClick={reset}>Revise and try again</button> : <button className={buttonClass} disabled={busy || !selected || !explanation.trim() || (!!followup && !answer.trim())}>{busy ? 'Thinking with you…' : followup ? 'Check my understanding' : 'Ask my follow-up'}</button>}
