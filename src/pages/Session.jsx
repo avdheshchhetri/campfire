@@ -5,12 +5,13 @@ import SessionChallenges from '../features/challenges/SessionChallenges.jsx';
 import PhonePresencePage from '../features/focus/PhonePresencePage.jsx';
 import FeatureBoundary from '../components/layout/FeatureBoundary.jsx';
 import { useAuth } from '../features/auth/AuthContext';
+import SessionRecap from '../features/focus/SessionRecap.jsx';
 import SharedScreen from '../features/focus/SharedScreen.jsx';
 
 export default function Session({ view = 'overview' }) {
   const { roomId, sessionId } = useParams();
   const { user } = useAuth();
-  const { refreshRoom } = useOutletContext();
+  const { refreshRoom, room } = useOutletContext();
   const [state, setState] = useState({ loading: true });
   const [revision, setRevision] = useState(0);
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function Session({ view = 'overview' }) {
   if (state.error || !state.session || !state.session.is_active || state.session.ended_at) return <section className="panel empty-state">
     <h1 className="font-display page-heading">{state.error ? 'Couldn’t load this session' : !state.session ? 'This session isn’t here' : 'This session has ended'}</h1>
     <p className="muted my-5" role={state.error ? 'alert' : undefined}>{state.error || 'Return to your room to start or join another session.'}</p>
+    {!state.error && state.session?.ended_at && <SessionRecap roomId={roomId} session={state.session} examDate={room?.exam_date} />}
     {state.error && <button className="button mr-3" onClick={() => setRevision(value => value + 1)}>Try again</button>}
     <Link className="button button-secondary" to={`/room/${roomId}`}>Back to room</Link>
   </section>;

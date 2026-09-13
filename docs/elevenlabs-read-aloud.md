@@ -1,0 +1,120 @@
+# Optional ElevenLabs tutor voice
+
+Campfire’s teach-back AI is Gemini. ElevenLabs reads the displayed text; it does not replace Gemini, grade answers, or change verification status.
+
+## Add your API key
+
+1. In ElevenLabs, create an API key with text-to-speech access. Keep the key private.
+2. Open `.env.local` **in the Campfire repository root**, alongside `package.json`.
+3. Add this line and replace the placeholder yourself:
+
+```dotenv
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+```
+
+4. Restart `npm run dev`. The local Vite bridge serves `/api/speak`.
+5. For Vercel, open **Project → Settings → Environment Variables**. Choose **Secret**, use `ELEVENLABS_API_KEY` as the name/key, and paste your API key as the value. Select your deployment environments, save, and redeploy.
+
+Do not put this secret in Git, `config/public-supabase.json`, a React component, or a `VITE_` variable. GitHub Pages cannot host this route. Existing Supabase server URL/public-key configuration is required for authentication; this route does not need a service-role key or new migration.
+
+## One tutor voice
+
+Chosen voice: **Talia — Warm Soft Guide**, ID `OZ0L6eISlOejga3XjDFt`. This is the warm-guide replacement linked from [ElevenLabs’ default-voice documentation](https://elevenlabs.io/docs/help-center/product/voices/my-voices/what-are-default-voices).
+
+[Open Talia in the Voice Library](https://elevenlabs.io/app/voice-library?search=OZ0L6eISlOejga3XjDFt). Add it to your account if needed. An optional server variable `ELEVENLABS_VOICE_ID` overrides the voice consistently across all calls; the client cannot choose or randomize a voice.
+
+Model: `eleven_multilingual_v2`. The `neutral`, `encouraging`, and `concerned` presets adjust stability, style and speed while keeping the same voice. These are gentle delivery settings, not guaranteed emotion controls; the wording also influences delivery. See [ElevenLabs TTS](https://elevenlabs.io/docs/overview/capabilities/text-to-speech) and [Create speech API](https://elevenlabs.io/docs/api-reference/text-to-speech/convert).
+
+## API route
+
+Implemented in [`api/speak.js`](../api/speak.js):
+
+```http
+POST /api/speak
+Content-Type: application/json
+Authorization: Bearer <Supabase access token>
+```
+
+```json
+{
+  "roomId": "your-room-uuid",
+  "text": "What makes a recursive function stop?",
+  "mood": "neutral"
+}
+```
+
+Successful JSON response:
+
+```json
+{ "audio": "<base64 MP3>", "mimeType": "audio/mpeg" }
+```
+
+The route validates room membership, text length (1–2,000 characters), and the mood before calling ElevenLabs. It returns no API key and sets `Cache-Control: no-store`. The provider call has a 20-second deadline; the client has a 25-second overall deadline, including sign-in lookup. Provider errors return a safe JSON error. Audio size is limited to 2 MB. There are no automatic generation retries.
+
+Only text selected for playback is sent to ElevenLabs. Replaying the currently loaded clip uses the existing audio; leaving/changing the component discards it, so another later playback can use additional ElevenLabs credits. The app does not set the ElevenLabs account’s spending cap; configure that in the provider account if needed.
+
+## Playback component
+
+[`ReadAloud.jsx`](../src/features/audio/ReadAloud.jsx) is an optional sound-icon button with play/pause, preparing-audio and speaking indicators, plus a nonblocking failure/retry message. It never starts fetching on mount. The first click fetches and starts the clip; if the browser blocks playback after the fetch, it asks for another tap without regenerating audio.
+
+```jsx
+import ReadAloud from '../audio/ReadAloud.jsx';
+
+<ReadAloud
+  roomId={roomId}
+  text={question}
+  mood="neutral"
+  label="Read follow-up question aloud"
+/>
+```
+
+Changing the text or navigating away cancels the pending request and stops the old clip. Starting another tutor clip pauses the previous one. Audio state is separate from form state: no audio error calls the teach-back submission handler or blocks answer submission.
+
+## TeachTopic integration
+
+[`TeachTopic.jsx`](../src/features/syllabus/TeachTopic.jsx) keeps the question-generation flow unchanged. The rendered follow-up gains this adjacent control:
+
+```diff
++ import ReadAloud from '../audio/ReadAloud.jsx';
+
+- <p>{followup.question}</p>
++ <div className="flex items-start gap-3">
++   <p>{followup.question}</p>
++   <ReadAloud roomId={roomId} text={followup.question}
++     mood="neutral" label="Read follow-up question aloud" />
++ </div>
+```
+
+The displayed evaluation feedback also has a read-aloud button, with encouraging mood after verification and neutral mood otherwise. Neither insertion awaits audio during `submit()`.
+
+## SessionRecap integration
+
+There was no `SessionRecap` in this checkout. [`SessionRecap.jsx`](../src/features/focus/SessionRecap.jsx) now renders on ended-session pages through [`Session.jsx`](../src/pages/Session.jsx). Ending a session saves normally first; recap loading and audio happen afterward.
+
+```jsx
+<SessionRecap
+  roomId={roomId}
+  session={state.session}
+  examDate={room?.exam_date}
+/>
+```
+
+The recap displays one sentence built from the saved syllabus data. Its sound button is separate:
+
+```jsx
+<p>{recap.text}</p>
+<ReadAloud roomId={roomId} text={recap.text}
+  mood={recap.mood} label="Read session recap aloud" />
+```
+
+Mood rules:
+
+- **Encouraging:** more than half of the syllabus topics are verified.
+- **Concerned:** fewer than half are verified and the exam is within seven days of session end.
+- **Neutral:** other cases, including no topics or exactly half verified.
+
+Topics whose latest teaching timestamp falls between the session’s `started_at` and `ended_at` are described as worked on this session. Otherwise the recap describes overall saved coverage, avoiding invented activity. It uses current saved topic records, not an immutable historical session log. If the topic read fails, a generic text recap remains available. No extra Gemini request is needed.
+
+## Validation and remaining setup
+
+Automated tests cover route authorization, mood settings, provider errors, click-only fetching, pause/replay, stale-request cancellation, playback blocking, and recap mood/activity selection. No real ElevenLabs speech was generated during implementation because the API key is left for you to configure. After adding it, click a question’s sound icon and test playback on the actual demo device.

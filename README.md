@@ -10,6 +10,16 @@ Built with **React 19, Vite 7, Tailwind CSS 4, Supabase Auth/Postgres/Realtime, 
 
 > **Hosting matters:** GitHub Pages serves the interface and supports Supabase-backed features. It cannot run Gemini APIs. For the complete app, use local development with configured server credentials or deploy the frontend and API routes together to Vercel. Pushing code does **not** apply Supabase database migrations.
 
+## Hackathon integrations — hacks used
+
+| Technology | Role in Campfire | Status |
+| --- | --- | --- |
+| **Google Gemini** | Syllabus analysis, teach-back questions/evaluation, and individual quiz generation | Implemented; requires the server key, available quota, and database setup |
+| **ElevenLabs** | Optional spoken follow-up questions, feedback, and session recaps using one tutor voice | Implemented; add `ELEVENLABS_API_KEY` to enable live speech |
+| **Auth0** | Planned authentication integration | **Planned — not implemented yet**; current login and guest sessions use Supabase Auth |
+
+Supabase continues to provide the database, access policies, and Realtime features.
+
 ## Features
 
 | Area | What it does |
@@ -19,6 +29,7 @@ Built with **React 19, Vite 7, Tailwind CSS 4, Supabase Auth/Postgres/Realtime, 
 | Study rooms | Create a room with a subject and exam date, invite teammates using its join code, and share a syllabus |
 | Learning map | Review syllabus topics, track untouched/awaiting-verification/verified states, and see approaching-exam reminders |
 | Syllabus analysis | Extract suggested topics from pasted text or PDF batches using Gemini; review and edit before saving |
+| Optional tutor voice | Click the sound icon to hear questions, feedback, or the session recap through ElevenLabs; text works independently |
 | Teach-back | Explain a topic, answer a generated follow-up question, and receive a verification result |
 | Shared focus | Live phone states, highlighted interruptions, and a timer that pauses on an up reading and retains last-known down states during phone sleep |
 | Gemini challenges | Individual questions with hints passed to other named teammates, encouraging discussion |
@@ -129,6 +140,8 @@ Open the address printed by Vite, normally `http://127.0.0.1:5173`. The developm
 | `SUPABASE_URL` | Server | Same project URL, used by API handlers |
 | `SUPABASE_ANON_KEY` | Server | Same public key, used when validating the caller’s session and permissions |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret/server only** | Privileged database access for verified teaching results and generated questions |
+| `ELEVENLABS_API_KEY` | **Secret/server only, optional** | ElevenLabs text-to-speech; add to `.env.local` or Vercel environment variables |
+| `ELEVENLABS_VOICE_ID` | Server configuration, optional | Fixed tutor voice override; defaults to Talia — Warm Soft Guide |
 | `GEMINI_API_KEY` | **Secret/server only** | Google Gemini API access |
 | `TEACHING_SIGNING_SECRET` | **Secret/server only** | Random secret of at least 32 characters for signed teach-back attempts |
 | `GEMINI_MODEL` | Server configuration, optional | Syllabus analysis/teach-back model override |
@@ -209,6 +222,14 @@ Core access rules:
 - Teach-back requires an explanation and a follow-up answer. An explanation alone does not verify a topic. Drafts are retained temporarily in the current browser tab.
 - Personal teaching credit follows verified topics attributed through `last_taught_by`. Completed group rounds contribute challenge wins to their original participants. Ranking combines these counts minus hint penalties; percentage progress measures verified topics.
 - Without the member-progress migration, the UI may fall back to the original shared-room leaderboard values. Correct personal scoring requires all migrations.
+
+## Optional read-aloud tutor
+
+Click the small sound icon beside a teach-back question, feedback, or an ended session’s recap. Nothing plays or calls ElevenLabs automatically. Loading, speaking, pause, and retry states are visible; the text and answer controls remain usable if audio fails. Replaying a clip already loaded in that component does not generate it again.
+
+Add `ELEVENLABS_API_KEY=your_key_here` to the repository-root `.env.local` and restart local development. For the deployed full app, add the same name as a **Secret** in Vercel’s environment variables and redeploy. Never use a `VITE_` prefix for this key. GitHub Pages cannot run `/api/speak`. No additional database migration is needed.
+
+The fixed tutor voice is **Talia — Warm Soft Guide** (`OZ0L6eISlOejga3XjDFt`), using Eleven Multilingual v2. Add that voice to your ElevenLabs account if required. [Voice setup, route contract, and integration additions](docs/elevenlabs-read-aloud.md).
 
 ## Deployment
 

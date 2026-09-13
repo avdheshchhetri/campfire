@@ -186,3 +186,10 @@ html:not(.dark) .cf-shell input::placeholder { color: var(--light-muted); opacit
 .cf-shell :is(.cf-hints .cf-text-button,.cf-note,.cf-listening p) { font-size: .875rem; line-height: 1.6; }
 .cf-shell .cf-section-label { flex-wrap: wrap; gap: .5rem; }
 .cf-shell .cf-section-label span { font-size: .75rem; letter-spacing: .04em; }
+.read-aloud { display: inline-flex; align-items: center; gap: .5rem; flex-wrap: wrap; flex-shrink: 0; max-width: 240px; }
+.read-aloud-button { display: grid; place-items: center; min-width: 36px; min-height: 36px; padding: 8px; border: 1px solid var(--light-border); border-radius: 50%; color: var(--light-accent); background: var(--light-surface); cursor: pointer; }
+.read-aloud-button:focus-visible { outline: 2px solid var(--light-accent); outline-offset: 3px; }
+.read-aloud-button:disabled { cursor: wait; opacity: .6; }
+.read-aloud-status { font-size: .8rem; line-height: 1.5; color: var(--light-muted); }
+.dark .read-aloud-button { color: #b8f994; background: #17232c; border-color: #506474; }
+.dark .read-aloud-status { color: #94a3b8; }

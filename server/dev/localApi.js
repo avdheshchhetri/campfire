@@ -1,10 +1,12 @@
 import { loadEnv } from 'vite';
+import speak from '../../api/speak.js';
 import parseSyllabus from '../../api/parse-syllabus.js';
 import verifyTeaching from '../../api/verify-teaching.js';
 import generateChallenge from '../../api/generate-challenge-gemini.js';
 import saveChallenge from '../../api/save-challenge.js';
 
 const routes = {
+  '/api/speak': speak,
   '/api/parse-syllabus': parseSyllabus,
   '/api/verify-teaching': verifyTeaching,
   '/api/generate-challenge-gemini': generateChallenge,
@@ -19,7 +21,7 @@ export function localApi() {
     configResolved(config) {
       const env = loadEnv(config.mode, config.envDir, '');
       for (const key of ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY',
-        'GEMINI_API_KEY', 'GEMINI_MODEL', 'GEMINI_CHALLENGE_MODEL', 'TEACHING_SIGNING_SECRET']) {
+        'ELEVENLABS_API_KEY', 'ELEVENLABS_VOICE_ID', 'GEMINI_API_KEY', 'GEMINI_MODEL', 'GEMINI_CHALLENGE_MODEL', 'TEACHING_SIGNING_SECRET']) {
         if (!process.env[key] && env[key]) process.env[key] = env[key];
       }
     },
