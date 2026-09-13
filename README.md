@@ -2,7 +2,7 @@
 
 **Study together. Put your phones down. Help each other learn.**
 
-Campfire is a group study app with shared rooms, a syllabus learning map, Gemini-powered teach-back and challenges, and a shared focus timer that runs while everyone’s phone is face-down.
+Campfire is a group study app with shared rooms, a syllabus learning map, Gemini-powered teach-back and challenges, and a shared focus timer that runs while everyone’s last recorded phone position is face-down. Campfire combines individual accountability with teamwork: solve your own question, help a teammate with their hint, and move forward together.
 
 Built with **React 19, Vite 7, Tailwind CSS 4, Supabase Auth/Postgres/Realtime, and Google Gemini**. Serverless API routes run on Vercel; local development runs the same handlers through Vite.
 
@@ -20,32 +20,81 @@ Built with **React 19, Vite 7, Tailwind CSS 4, Supabase Auth/Postgres/Realtime, 
 | Learning map | Review syllabus topics, track untouched/awaiting-verification/verified states, and see approaching-exam reminders |
 | Syllabus analysis | Extract suggested topics from pasted text or PDF batches using Gemini; review and edit before saving |
 | Teach-back | Explain a topic, answer a generated follow-up question, and receive a verification result |
-| Shared focus | Live phone states, highlighted interruptions, and a timer that pauses when a participant is up or disconnected |
+| Shared focus | Live phone states, highlighted interruptions, and a timer that pauses on an up reading and retains last-known down states during phone sleep |
 | Gemini challenges | Individual questions with hints passed to other named teammates, encouraging discussion |
 | Practice puzzles | Built-in collaborative puzzles with private clues and one shared group answer; no AI key required |
 | Progress and leaderboard | Personal verified-topic credit plus completed group challenge wins |
 | Appearance | Persistent light/dark theme, Fraunces display text, and IBM Plex Sans body/UI text |
 
-### How individual challenges work
+## Campfire rules
 
-New **Generate with Gemini** rounds support 1–6 participants and use a syllabus topic from the room.
+These rules describe **new individual Gemini quizzes with all database migrations applied**. Older shared-answer rounds and practice puzzles behave differently, as noted below.
 
-- **Maths:** everyone gets the same question format with different numbers. For example, one person solves `3x + 5 = 26`, while another solves `4x + 7 = 35`.
-- **Other subjects:** everyone gets a different question within the same topic, at comparable difficulty. Historical-figure questions might ask about the first US president and the president who issued the Emancipation Proclamation in 1863.
-- The question appears directly under the topic. Teammate hints start collapsed and require a reveal click; the owner’s name/avatar stays visible. Each person sees their own question. Its hint goes to the next teammate in the round’s fixed roster, labeled **“Hint for [name]”**, with that question’s context.
-- Each person submits their own answer, and answers are required to differ across participants. The next quiz stays locked until every assigned participant answers correctly. After eight incorrect attempts, that user’s own hint is automatically shown and one point is deducted once for that question; this does not mark the answer correct.
-- Answers are saved in a private database table and checked server-side. The individual-generation response returns only the round ID.
-- Solo rounds show the player their own hint. Join before a round starts to receive an assignment; late joiners participate in the next round.
+### Joining and starting
 
-Existing rounds and the practice puzzle bank retain their shared-answer behavior. Start a **new Gemini round** after applying the individual-question migration. There is no Claude integration in this repository.
+1. Sign in or enter as a guest, then create a room or join with its code. Each teammate should use their own account/device so questions and hints have separate owners.
+2. Add and save syllabus topics in the learning map before generating a quiz.
+3. Join the active session before the round starts. Individual quizzes support **1–6 participants**; use **2 or more** for exchanged hints and conversation.
+4. A round keeps its original participant list. People joining late wait for the next round. Leaving or disconnecting does not automatically solve a participant’s question.
 
-### How shared focus works
+### Questions and answers
 
-Each participant opens the phone view, taps **Enable Motion Detection**, and places their phone face-down. Orientation readings update their `up`/`down` state at most once every two seconds. **Simulate Face-Down** provides a manual override when sensors are unavailable or unreliable.
+1. **Your question comes first:** it appears directly below the topic, outside the clue section.
+2. **Maths questions use the same format with different numbers and answers.** For example, Alex might solve `3x + 5 = 26` (answer: `7`), while Sam solves `4x + 7 = 39` (answer: `8`).
+3. **Other subjects use similar question types within the same topic and at comparable difficulty**, but ask about different people, facts, inputs, or cases. In US historical figures, one person might identify the first US president and another the president who issued the Emancipation Proclamation in 1863.
+4. **Every participant’s canonical answer must be different.** Generation rejects repeated answers rather than giving everyone the same solution.
+5. **Submit your own answer.** One person answering correctly does not fill in, correct, or mark anyone else’s answer as solved.
+6. Follow the answer format requested in the question. Checks use the stored canonical answer, ignoring case and whitespace; they are not an open-ended grading conversation and may reject alternative wording or notation.
+7. **Everyone must answer correctly before the next quiz unlocks.** For a pair, both must succeed; for a larger group, every assigned participant must succeed. If you finish first, help the others using their hints.
+8. Individual quizzes cannot be cancelled to skip ahead. The study session can still be ended when the group is finished; that does not award a completed-round win.
 
-The shared screen shows the room roster and runs the timer while everyone’s last saved state is down. A sleeping or disconnected phone retains its last state until a new reading arrives. Accumulated time survives navigation between app views in the same browser. Ending a session sets `ended_at` and `is_active: false`.
+### Hints and communication
 
-**Device limits:** motion detection needs HTTPS on real phones and may require explicit permission. The phone page requests a screen wake lock to prevent automatic sleep while supported and permitted. Manually locking the phone, switching apps, battery-saving settings, or browser suspension can stop detection; a website cannot guarantee background motion tracking. Campfire intentionally assumes the last position is unchanged during that gap, including a lost connection. The display labels offline down states as assumed focus. A fresh up reading pauses the timer; a fresh down reading keeps it running. End the session when finished. The timer is accumulated per browser, not a server-authoritative clock synchronized across independent shared screens. Reload restores saved time but does not credit the unobserved gap.
+1. With two or more participants, **your hint goes to someone else**, and you hold a hint for another teammate. Assignment rotates through the fixed round roster.
+2. The hint card shows its owner’s **name and avatar/icon**, such as **“Hint for Sam.”** This identifies the person the clue helps, not the person currently holding it.
+3. **Hint contents start hidden.** Click the reveal button to open a teammate’s hint; click again to hide it. A hint includes the relevant question context so you know what to explain.
+4. Share and explain the clue to its owner. Revealing a teammate’s hint is normal collaboration and carries **no point penalty**.
+5. A solo round has no other person to exchange with, so the player can open their own solo hint.
+6. **After your eighth incorrect submission**, your own hint is automatically shown to you. You receive a **one-point penalty once for that question**. Further wrong attempts do not repeat that deduction.
+7. The assistance hint does **not** reveal a stored answer, mark you correct, or unlock the next quiz. You must still answer correctly. Your failures and penalty do not apply to your teammates.
+
+### Points and learning progress
+
+The leaderboard uses this rule:
+
+```text
+Points = personally verified topics + completed group challenge wins − hint penalties
+```
+
+- A verified topic contributes one point to the member credited through `last_taught_by`.
+- A completed group round contributes one win to each original participant. In individual quizzes, the round finishes only when everyone succeeds.
+- The eight-failure assistance rule deducts one point from the person who needed their own hint, once per question. Points can be negative if penalties exceed earned credit.
+- Repeated submissions after your correct answer do not add extra wins or points.
+- Verified-topic percentage measures syllabus progress, not quiz points. Finishing a quiz does not automatically verify a syllabus topic.
+- Teach-back requires an explanation **and** a follow-up answer; an explanation alone does not verify a topic.
+- Equal point totals receive equal ranks. Sorting the display by name does not change those ranks.
+
+### Shared focus and sleeping phones
+
+1. Every room member is included in the shared focus roster. Each person opens **Use this phone**, enables motion detection, and places the phone face-down. Keep **Shared focus screen** open on a separate laptop/tablet.
+2. The timer starts or resumes only when everyone has a saved **down** state and the shared display has a confirmed database connection. A missing or **up** state pauses it.
+3. **Phone sleep does not itself pause the timer.** If the last recorded position was down, Campfire keeps counting while that phone sleeps or disconnects.
+4. When the phone wakes, a fresh **up** reading pauses the timer. A fresh **down** reading keeps it running without a sleep-related pause. If the last saved state was up, sleeping does not turn it into down.
+5. This is an explicit **last-known-position assumption**, not sensor tracking while the phone is asleep. A disconnected or closed phone can remain assumed down until a new up reading arrives or the session ends. Offline down states are labeled accordingly.
+6. The phone page requests a screen wake lock where supported. HTTPS, motion permission, browser support, and device power settings still affect detection. The website cannot guarantee background sensor access.
+7. **Simulate Face-Down** overrides the sensor for testing or unreliable devices and is visibly labeled. Turn it off to return to sensor-based readings.
+8. Presence writes are throttled to at most once every two seconds; network delay can also affect when a new state appears.
+9. Accumulated time survives navigation within the same browser. It is not a server-authoritative total synchronized across separate shared screens. Reload restores saved accumulated time but does not credit the unobserved reload gap.
+10. End the session when finished. Ending it marks the session inactive and stops focus counting.
+
+### Practice rounds, availability, and limits
+
+- **Practice puzzles and older rounds use one shared group answer.** A correct group answer completes those rounds. They do not use the new individual-answer and eight-attempt assistance rules.
+- Start a **new Gemini round** after applying all migrations to use individual questions, distinct answers, exchanged hints, and penalties. Existing rounds are not silently rewritten.
+- Questions and hints are AI-generated and may contain mistakes; review anything that seems ambiguous. If a question is unusable, end the study session and start a new one. There is no teacher override for individual answer grading in the current app.
+- Gemini needs a configured server and available API quota. A timeout or rate-limit response does not count as a wrong quiz answer.
+- GitHub Pages hosts the interface only; Gemini analysis, teach-back, and generation require full API hosting or configured local development. There is no Claude integration in this repository.
+- The phone view has a retry panel for rendering failures. That improves recovery but does not establish that every device-specific failure is resolved.
 
 ## Run locally
 
