@@ -38,3 +38,12 @@ it('rejects GET, invalid saves and database conflicts', async () => {
   rpc.mockResolvedValue({ error: { code: 'P0001' } });
   expect((await invoke(save, { challenge: puzzle })).code).toBe(409);
 });
+
+it('saves individual answers privately and returns only the round ID', async () => {
+  const questions=[{question:'Solve 2x=8',full_answer:'4',hint:'Divide by two'}];
+  mocks.generateGeminiChallenge.mockResolvedValue({questions});
+  const result=await invoke(generate,{mode:'individual'});
+  expect(result.body).toEqual({challengeId:'challenge-id'});
+  expect(JSON.stringify(result.body)).not.toContain('full_answer');
+  expect(rpc).toHaveBeenCalledWith('cf_save_individual',expect.objectContaining({p_user:'u',p_questions:questions}));
+});

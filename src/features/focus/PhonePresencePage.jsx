@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../supabaseClient.js';
 import { currentUserId, watchSession, writeState } from './campfireApi.js';
 import { createStateWriter, orientationState } from './orientation.js';
+import { useWakeLock } from './useWakeLock.js';
 
 export default function PhonePresencePage({ sessionId }) {
   const [userId, setUserId] = useState(null);
@@ -41,6 +42,7 @@ function PhoneSession({ sessionId, userId }) {
   const [requesting, setRequesting] = useState(false);
   const [hint, setHint] = useState('Enable the sensor, then put your phone face-down.');
   const [visible, setVisible] = useState(() => !document.hidden);
+  const wakeLock = useWakeLock(active === true);
   const writer = useRef(null);
   const mounted = useRef(false);
   const effective = visible && (simulate || sensor === 'down') ? 'down' : 'up';
@@ -131,6 +133,14 @@ function PhoneSession({ sessionId, userId }) {
           className="w-full rounded-xl border border-border dark:border-slate-500 p-3 disabled:opacity-50">
           {simulate ? 'Stop Simulating Face-Down' : 'Simulate Face-Down'}
         </button>
+        {active === true && <div className="text-sm text-muted dark:text-slate-300" role="status">
+          <p>{wakeLock.status === 'active'
+            ? 'Keep-awake is on. Leave this page open and place your phone face-down; automatic screen sleep is prevented.'
+            : 'Keep-awake is unavailable or paused. Keep this page visible and turn off auto-lock in your phone settings for this session.'}</p>
+          <p>Manually locking your phone or switching apps can suspend motion detection and pause shared focus. Return here to reconnect.</p>
+          {wakeLock.status !== 'active' && wakeLock.status !== 'unsupported' && <button
+            onClick={wakeLock.retry} className="mt-2 underline">Retry keep-awake</button>}
+        </div>}
         <p className="text-sm text-muted dark:text-slate-400" aria-live="polite">
           Connection: {connection}. {saved === effective ? `Saved: ${saved}.` : 'State waiting to sync…'}
         </p>

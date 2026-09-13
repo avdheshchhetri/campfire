@@ -20,7 +20,6 @@ export function createSupabaseAdapter({ client, roomId, sessionId }: ChallengeEn
     if (!response.ok) throw new Error(result.error || 'Could not generate the challenge.');
     return result;
   }
-  let pending: { key: string; challenge: unknown } | null = null;
   return {
     async load(): Promise<Snapshot> {
       const snapshot: Snapshot = await rpc('cf_snapshot', { p_room: roomId, p_session: sessionId });
@@ -33,12 +32,7 @@ export function createSupabaseAdapter({ client, roomId, sessionId }: ChallengeEn
     },
     async start() { await rpc('cf_start', { p_room: roomId, p_session: sessionId }); },
     async startGenerated(input) {
-      const body = { roomId, sessionId, ...input };
-      const key = JSON.stringify(body);
-      // Retry a failed save without paying for another generation.
-      if (pending?.key !== key) pending = { key, challenge: await post('/api/generate-challenge-gemini', body) };
-      await post('/api/save-challenge', { ...body, challenge: pending.challenge });
-      pending = null;
+      await post('/api/generate-challenge-gemini', { roomId, sessionId, ...input, mode: 'individual' });
     },
     async submit(answer) { return await rpc('cf_submit', { p_room: roomId, p_session: sessionId, p_answer: answer }); },
     async cancel() { await rpc('cf_cancel', { p_room: roomId, p_session: sessionId }); },

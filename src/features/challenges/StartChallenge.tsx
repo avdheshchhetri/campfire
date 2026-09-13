@@ -28,6 +28,7 @@ export function StartChallenge({ subject, topics, busy, disabled, onGenerate }: 
     <button className="cf-primary" disabled={busy || disabled || !selected} onClick={() => void generate()}>
       {busy ? 'Preparing challenge…' : 'Generate with Gemini'}
     </button>
+    <small>Different questions on this topic; maths uses the same format with different numbers. Your hint goes to someone else.</small>
     {!subject && <small>This room has no subject tag; the selected topic will guide the puzzle.</small>}
   </div>;
 }

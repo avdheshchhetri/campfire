@@ -156,3 +156,33 @@ it('supports solo and pair generated rounds without losing a required clue, and 
   await asUser('99999999-9999-4999-8999-999999999999');
   await expect(db.query('select * from cf_progress($1)',[room])).rejects.toThrow();
 });
+
+it('assigns different individual questions, swaps named hints, and requires every answer for a win', async () => {
+  await db.exec('reset role');
+  await db.query("update challenges set status='cancelled' where session_id=$1 and status='active'",[session]);
+  const questions=Array.from({length:6},(_,i)=>({question:`Solve 2x = ${2*(i+2)}. Answer with x only.`,full_answer:String(i+2),hint:`Divide ${2*(i+2)} by 2.`}));
+  const args=[room,session,ids[0],'30000000-0000-0000-0000-000000000001',JSON.stringify(questions)];
+  await asUser(ids[0]);
+  await expect(db.query('select cf_save_individual($1,$2,$3,$4,$5::jsonb)',args)).rejects.toThrow();
+  await db.exec('reset role; set role service_role');
+  await db.query('select cf_save_individual($1,$2,$3,$4,$5::jsonb)',args);
+  await asUser(ids[0]); const first=await snapshot();
+  expect(first.challenge.prompt).toBe(questions[0].question);
+  expect(first.clues[0].clue_text).toContain('Hint for Player 2');
+  expect(first.clues[0].clue_text).toContain(questions[1].hint);
+  expect(first.challenge).not.toHaveProperty('answer');
+  await expect(db.query('select * from cf_private.individual_questions')).rejects.toThrow();
+  expect(await submit('3')).toBe(false);
+  expect(await submit('2')).toBe(true);
+  expect((await snapshot()).challenge).toMatchObject({status:'active',own_solved:true,solved_count:1});
+  const attempts=(await snapshot()).challenge.attempts;
+  expect(await submit('2')).toBe(true);
+  expect((await snapshot()).challenge.attempts).toBe(attempts);
+  await asUser(ids[2]); expect((await snapshot()).clues).toHaveLength(0);
+  await expect(submit('4')).rejects.toThrow();
+  await asUser(ids[1]); const second=await snapshot();
+  expect(second.challenge.prompt).toBe(questions[1].question);
+  expect(second.clues[0].clue_text).toContain('Hint for Player 1');
+  expect(await submit('3')).toBe(true);
+  expect((await snapshot()).challenge).toMatchObject({status:'solved',own_solved:true,solved_count:2});
+});
