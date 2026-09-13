@@ -118,3 +118,7 @@ Topics whose latest teaching timestamp falls between the session’s `started_at
 ## Validation and remaining setup
 
 Automated tests cover route authorization, mood settings, provider errors, click-only fetching, pause/replay, stale-request cancellation, playback blocking, and recap mood/activity selection. No real ElevenLabs speech was generated during implementation because the API key is left for you to configure. After adding it, click a question’s sound icon and test playback on the actual demo device.
+
+## Quiz questions and clues
+
+The challenge question includes an optional sound button. Teammate clue audio is mounted only inside the revealed clue: reveal first, then click its sound button to request speech. Hiding the clue stops playback and cancels a pending request. No speech request occurs merely by revealing it, and audio failure never blocks answers or hint controls.

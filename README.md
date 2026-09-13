@@ -15,7 +15,7 @@ Built with **React 19, Vite 7, Tailwind CSS 4, Supabase Auth/Postgres/Realtime, 
 | Technology | Role in Campfire | Status |
 | --- | --- | --- |
 | **Google Gemini** | Syllabus analysis, teach-back questions/evaluation, and individual quiz generation | Implemented; requires the server key, available quota, and database setup |
-| **ElevenLabs** | Optional spoken follow-up questions, feedback, and session recaps using one tutor voice | Implemented; add `ELEVENLABS_API_KEY` to enable live speech |
+| **ElevenLabs** | Optional spoken quiz questions, revealed clues, teach-back questions, feedback, and session recaps using one tutor voice | Implemented; add `ELEVENLABS_API_KEY` to enable live speech |
 | **Auth0** | Planned authentication integration | **Planned — not implemented yet**; current login and guest sessions use Supabase Auth |
 
 Supabase continues to provide the database, access policies, and Realtime features.
@@ -62,7 +62,7 @@ These rules describe **new individual Gemini quizzes with all database migration
 ### Hints and communication
 
 1. With two or more participants, **your hint goes to someone else**, and you hold a hint for another teammate. Assignment rotates through the fixed round roster.
-2. The hint card shows its owner’s **name and avatar/icon**, such as **“Hint for Sam.”** This identifies the person the clue helps, not the person currently holding it.
+2. The hint card shows its owner’s **name and avatar/icon**, such as **“Sam’s clue.”** This identifies the person the clue helps, not the person currently holding it.
 3. **Hint contents start hidden.** Click the reveal button to open a teammate’s hint; click again to hide it. A hint includes the relevant question context so you know what to explain.
 4. Share and explain the clue to its owner. Revealing a teammate’s hint is normal collaboration and carries **no point penalty**.
 5. A solo round has no other person to exchange with, so the player can open their own solo hint.
@@ -225,7 +225,7 @@ Core access rules:
 
 ## Optional read-aloud tutor
 
-Click the small sound icon beside a teach-back question, feedback, or an ended session’s recap. Nothing plays or calls ElevenLabs automatically. Loading, speaking, pause, and retry states are visible; the text and answer controls remain usable if audio fails. Replaying a clip already loaded in that component does not generate it again.
+Click the small sound icon beside a quiz question, teach-back question, feedback, or an ended session’s recap. A clue’s optional sound button appears only after you reveal that clue; hiding it stops playback and removes the audio control. Hidden clues never request speech. Nothing plays or calls ElevenLabs automatically. Loading, speaking, pause, and retry states are visible; the text and answer controls remain usable if audio fails. Replaying a clip already loaded in that component does not generate it again.
 
 Add `ELEVENLABS_API_KEY=your_key_here` to the repository-root `.env.local` and restart local development. For the deployed full app, add the same name as a **Secret** in Vercel’s environment variables and redeploy. Never use a `VITE_` prefix for this key. GitHub Pages cannot run `/api/speak`. No additional database migration is needed.
 
@@ -342,3 +342,7 @@ Suggested end-to-end check: sign in with two accounts, join the same room/sessio
 Keep changes in the matching feature folder, coordinate shared routes/auth/client changes with the team integrator, and add ordered migrations for database changes. Never commit credentials or overwrite another teammate’s work. Include relevant tests and deployment/setup notes with a feature change.
 
 Useful references: [repository map](docs/repository-structure.md), [accounts](docs/accounts-and-avatars.md), [session and challenge updates](docs/session-fixes.md), [focus handoff](docs/section-b-handoff.md), and [syllabus handoff](docs/syllabus-teachback-handoff.md). Older handoffs may describe earlier behavior; the current code and ordered migrations take precedence.
+
+### Older challenge rounds
+
+Older shared-answer rounds may have stored the main question inside a clue. Campfire displays the common question upfront when it can recover it; otherwise it explains that the older round has no separate question. Use the explicit new individual quiz action to end an older round and generate individual questions. New individual rounds assign one question and one cross-teammate clue per participant joined to that focus session when the round starts (1–6 players), rather than every member of the room. Their roster stays fixed during the round. Legacy practice puzzles retain their shared-answer rules.
