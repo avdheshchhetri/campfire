@@ -1,69 +1,133 @@
 # Campfire
 
-A group study app built with React, Vite, Tailwind CSS, React Router, and Supabase. **Section D** is the app shell, navigation, authentication, room flow, leaderboard, and integration scaffold. It includes anonymous sign-in, first-login profiles, room creation/joining/leaving, shared navigation, session status, and a leaderboard. The room dashboard links to the syllabus and teach-back feature; the active-session route still contains integration placeholders.
+**Study together. Put your phones down. Help each other learn.**
 
-The application is named **Campfire**; the repository and planned Vercel project are named **campfire**. Existing Section B code in `src/campfire/` and `docs/section-b-handoff.md` has been preserved. That module needs the integration work described below before it can replace the session placeholder.
+Campfire is a group study app with shared rooms, a syllabus learning map, Gemini-powered teach-back and challenges, and a shared focus timer that runs while everyone’s phone is face-down.
 
-The Section C collaborative challenge engine lives in `src/features/challenges/`. Groups of 3–6 receive private puzzle pieces, discuss their clues, and submit a shared answer checked on the server. Its standalone demo is retained at `/challenge-demo.html`; it uses simulated participants and local state, without connecting to Supabase. The three included puzzles cover circuits, arithmetic mean, and logic. See the [challenge-engine handoff](docs/challenge-engine-handoff.md) for component props, security boundaries, and live integration checks.
+Built with **React 19, Vite 7, Tailwind CSS 4, Supabase Auth/Postgres/Realtime, and Google Gemini**. Serverless API routes run on Vercel; local development runs the same handlers through Vite.
+
+[Website on GitHub Pages](https://avdheshchhetri.github.io/campfire/) · [Setup and troubleshooting](#troubleshooting) · [Repository map](docs/repository-structure.md)
+
+> **Hosting matters:** GitHub Pages serves the interface and supports Supabase-backed features. It cannot run Gemini APIs. For the complete app, use local development with configured server credentials or deploy the frontend and API routes together to Vercel. Pushing code does **not** apply Supabase database migrations.
+
+## Features
+
+| Area | What it does |
+| --- | --- |
+| Accounts | Email/password registration and login, guest access, and guest-to-account upgrades |
+| Avatars | Choose initials, flame, fox, owl, rocket, leaf, or star; shown across rooms, sessions, and rankings |
+| Study rooms | Create a room with a subject and exam date, invite teammates using its join code, and share a syllabus |
+| Learning map | Review syllabus topics, track untouched/awaiting-verification/verified states, and see approaching-exam reminders |
+| Syllabus analysis | Extract suggested topics from pasted text or PDF batches using Gemini; review and edit before saving |
+| Teach-back | Explain a topic, answer a generated follow-up question, and receive a verification result |
+| Shared focus | Live phone states, highlighted interruptions, and a timer that pauses when a participant is up or disconnected |
+| Gemini challenges | Individual questions with hints passed to other named teammates, encouraging discussion |
+| Practice puzzles | Built-in collaborative puzzles with private clues and one shared group answer; no AI key required |
+| Progress and leaderboard | Personal verified-topic credit plus completed group challenge wins |
+| Appearance | Persistent light/dark theme, Fraunces display text, and IBM Plex Sans body/UI text |
+
+### How individual challenges work
+
+New **Generate with Gemini** rounds support 1–6 participants and use a syllabus topic from the room.
+
+- **Maths:** everyone gets the same question format with different numbers. For example, one person solves `3x + 5 = 26`, while another solves `4x + 7 = 35`.
+- **Other subjects:** everyone gets a different question within the same topic, at comparable difficulty. Historical-figure questions might ask about the first US president and the president who issued the Emancipation Proclamation in 1863.
+- Each person sees their own question. Its hint goes to the next teammate in the round’s fixed roster, labeled **“Hint for [name]”**, with that question’s context.
+- Each person submits their own answer. The round completes only after every assigned participant answers correctly.
+- Answers are saved in a private database table and checked server-side. The individual-generation response returns only the round ID.
+- Solo rounds show the player their own hint. Join before a round starts to receive an assignment; late joiners participate in the next round.
+
+Existing rounds and the practice puzzle bank retain their shared-answer behavior. Start a **new Gemini round** after applying the individual-question migration. There is no Claude integration in this repository.
+
+### How shared focus works
+
+Each participant opens the phone view, taps **Enable Motion Detection**, and places their phone face-down. Orientation readings update their `up`/`down` state at most once every two seconds. **Simulate Face-Down** provides a manual override when sensors are unavailable or unreliable.
+
+The shared screen shows the room roster and runs the timer only while everyone is connected and down. Accumulated time survives navigation between app views in the same browser. Ending a session sets `ended_at` and `is_active: false`.
+
+**Device limits:** motion detection needs HTTPS on real phones and may require explicit permission. The phone page requests a screen wake lock to prevent automatic sleep while supported and permitted. Manually locking the phone, switching apps, battery-saving settings, or browser suspension can stop detection; a website cannot guarantee background motion tracking. Return to the phone page to reconnect. The timer is accumulated per browser, not a server-authoritative clock synchronized across independent shared screens. Reload restores saved time but does not credit the unobserved gap.
 
 ## Run locally
 
-Use Node.js 24 and npm. From the repository root:
+### Prerequisites
+
+- Node.js **22.12 or later**; CI uses Node.js 24.
+- npm and Git.
+- A Supabase project with the migrations and Auth settings below.
+- A Gemini API key for AI features.
 
 ```sh
+git clone https://github.com/avdheshchhetri/campfire.git
+cd campfire
 npm ci
+cp .env.example .env.local
 ```
 
-Copy `.env.example` to `.env.local`, then replace its two placeholders:
-
-```dotenv
-VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_OR_PUBLISHABLE_KEY
-```
+On Windows, copy `.env.example` to `.env.local` using your editor or file manager. Edit **the repository-root `.env.local`**, supply your own values, then run:
 
 ```sh
 npm run dev
 ```
 
-Open the address printed by Vite, normally `http://127.0.0.1:5173`. Restart the development server after editing environment values. Without configuration, the app renders a setup message; authentication and database actions require a configured Supabase project.
+Open the address printed by Vite, normally `http://127.0.0.1:5173`. The development server includes the `/api` handlers; a separate `vercel dev` process is not required. Restart after changing environment variables.
 
-Other commands:
+### Environment variables
+
+| Name | Visibility | Purpose |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL` | Public/browser | Full Supabase URL, such as `https://YOUR_PROJECT_REF.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Public/browser | That project’s publishable key or legacy `anon` key |
+| `SUPABASE_URL` | Server | Same project URL, used by API handlers |
+| `SUPABASE_ANON_KEY` | Server | Same public key, used when validating the caller’s session and permissions |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Secret/server only** | Privileged database access for verified teaching results and generated questions |
+| `GEMINI_API_KEY` | **Secret/server only** | Google Gemini API access |
+| `TEACHING_SIGNING_SECRET` | **Secret/server only** | Random secret of at least 32 characters for signed teach-back attempts |
+| `GEMINI_MODEL` | Server configuration, optional | Syllabus analysis/teach-back model override |
+| `GEMINI_CHALLENGE_MODEL` | Server configuration, optional | Challenge-generation model override |
+
+Use model IDs available to your Gemini project. The example file contains explicit overrides; check them rather than assuming an older model remains available. Generation defaults and fallback behavior are defined in [challengeGeneration.js](server/challenges/challengeGeneration.js) and [teachback.js](server/syllabus/teachback.js).
+
+Generate a signing secret locally, then paste the result into `.env.local`:
 
 ```sh
-npm test
-npm run build
-npm run preview
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-The production build is written to `dist/` and includes both the app shell and `/challenge-demo.html`. `npm run build` checks the challenge TypeScript before bundling. `npm test` runs the React/Vitest checks, Node helper tests (including the preserved Campfire module), and challenge adapter/database tests.
+Keep `.env.local` out of Git; it is ignored. **Never prefix Gemini, service-role, or signing secrets with `VITE_`.** Vite embeds public-prefixed values into the browser bundle. The Supabase URL and public key are intentionally public; Auth and row-level security enforce access. All Supabase values must belong to the same project.
 
-### Environment values and sharing
+## Supabase setup
 
-| Value | Where it belongs | Purpose |
+### 1. Configure authentication
+
+In the Supabase project’s Authentication settings:
+
+1. Enable the **Email** provider for accounts and **Anonymous Sign-Ins** for guest access.
+2. Configure the email-confirmation flow and email delivery for your deployment.
+3. Set the Site URL to the website root and allow the required redirect URLs. Include `http://127.0.0.1:5173/` for local development. GitHub Pages uses `https://avdheshchhetri.github.io/campfire/`.
+4. Verify the guest-upgrade flow: add an email, confirm it, return to Account, and set a password. It retains the guest’s identity and room data; it does not merge a separate existing account.
+
+Guest identity persists in the current browser. Clearing its stored session or using another device does not recover that guest account. See [Accounts and avatars](docs/accounts-and-avatars.md) for the account UI and deployment checks.
+
+### 2. Apply all database migrations in order
+
+The SQL files in [`supabase/migrations/`](supabase/migrations/) are the database source of truth.
+
+| Order | Migration | Purpose |
 | --- | --- | --- |
-| `VITE_SUPABASE_URL` | Local `.env.local`; Vercel Preview and Production | Supabase project API URL |
-| `VITE_SUPABASE_ANON_KEY` | Local `.env.local`; Vercel Preview and Production | Public publishable key or legacy `anon` key; keep this variable name for the shared client |
-| `GEMINI_API_KEY` | Server environment or Supabase Edge Function secrets only | Server-side syllabus PDF/text analysis and teach-back with Gemini |
+| 1 | [20260912000100_shared_schema.sql](supabase/migrations/20260912000100_shared_schema.sql) | Original shared tables and leaderboard view |
+| 2 | [20260912000200_access_and_room_functions.sql](supabase/migrations/20260912000200_access_and_room_functions.sql) | Room operations, access policies, and indexes |
+| 3 | [20260912000300_challenge_engine.sql](supabase/migrations/20260912000300_challenge_engine.sql) | Private puzzle bank, round lifecycle, and clue access |
+| 4 | [20260912000400_challenge_permissions.sql](supabase/migrations/20260912000400_challenge_permissions.sql) | Restrict direct browser challenge writes |
+| 5 | [20260912000500_teaching_permissions.sql](supabase/migrations/20260912000500_teaching_permissions.sql) | Server-controlled teaching verification |
+| 6 | [20260912000600_generated_challenges.sql](supabase/migrations/20260912000600_generated_challenges.sql) | Generated puzzle persistence |
+| 7 | [20260913000100_profile_avatars.sql](supabase/migrations/20260913000100_profile_avatars.sql) | Shared avatar selection |
+| 8 | [20260913000200_session_challenge_fixes.sql](supabase/migrations/20260913000200_session_challenge_fixes.sql) | Solo/pair rounds and member progress scoring |
+| 9 | [20260913000300_cross_teammate_hints.sql](supabase/migrations/20260913000300_cross_teammate_hints.sql) | Named hints passed to teammates |
+| 10 | [20260913000400_individual_questions.sql](supabase/migrations/20260913000400_individual_questions.sql) | Individual questions, private answers, and per-person completion |
 
-The two Supabase browser values are intentionally public in the built app. Database access is protected by Auth and row-level security, not by hiding a public API key. Never place a service-role/secret key or Gemini API key in any `VITE_` variable: Vite includes those variables in client code. See [Vite environment variables](https://vite.dev/guide/env-and-mode).
+**SQL Editor:** on an empty project, open each file, copy its full contents into **SQL Editor → New query → Run**, and proceed in the order above. On an existing project, apply only missing migrations after verifying what was already run. Do not rerun the original schema over existing tables.
 
-Keep `.env.local` out of Git; `.gitignore` already excludes real environment files. Share the repository link and Supabase setup values through the team's private channel. Share an AI secret only with the teammate managing the server/Edge Function; do not add it to frontend configuration or a client-side request.
-
-## Set up Supabase
-
-The intended hosted organization is **hearth-hackathon**, with region **US East (N. Virginia)**. A hosted Supabase project has not yet been provisioned for this scaffold. Create/select that project, then copy its API URL and public key into the two environment variables above.
-
-Enable **Anonymous Sign-Ins** in the project's Auth settings. Anonymous users receive the `authenticated` database role after sign-in. The app creates their `profiles` row with an idempotent insert and preserves an existing display name. Guest sessions persist in that browser; clearing browser storage or switching devices does not recover the same guest identity. See [Supabase anonymous sign-ins](https://supabase.com/docs/guides/auth/auth-anonymous).
-
-### Apply the migrations once, in order
-
-1. `supabase/migrations/20260912000100_shared_schema.sql` is the exact schema supplied for the team: eight tables and the original leaderboard view.
-2. `supabase/migrations/20260912000200_access_and_room_functions.sql` adds access policies, safe room functions, indexes, and `security_invoker` on that same view. It does not change the shared columns or leaderboard calculation.
-3. `supabase/migrations/20260912000300_challenge_engine.sql` adds the challenge RPCs, private puzzle templates and answers, and clue ownership policies. It is the unchanged Section C migration, renamed to run after the shared schema and access policies.
-4. `supabase/migrations/20260912000400_challenge_permissions.sql` revokes the earlier column-level challenge update grants so browser clients must use the challenge RPCs.
-5. `supabase/migrations/20260912000500_teaching_permissions.sql` restricts teaching-status changes to the server, disallows browser edits/deletes of existing topics, and requires new topics to be untouched. No shared columns change.
-
-For a fresh hosted database, use the Supabase CLI from the repository root:
+**Supabase CLI:** if migration history is managed by the CLI:
 
 ```sh
 npx supabase login
@@ -71,144 +135,139 @@ npx supabase link --project-ref YOUR_PROJECT_REF
 npx supabase db push
 ```
 
-If the original schema was **already run manually**, first verify that every table and the view match the first migration exactly. Then mark that migration as applied and run only pending migrations:
+If SQL was previously executed manually, reconcile the actual schema with migration history before using `db push`. Mark only migrations that were fully applied; migration-history repair does not create missing tables or functions. No GitHub workflow in this repository automatically applies database migrations.
 
-```sh
-npx supabase migration repair 20260912000100 --status applied
-npx supabase db push
-```
+### 3. Verify Realtime and access
 
-`migration repair` updates migration history; it does not create or verify schema objects. Do not mark a partial or different schema as applied. Do not rerun the first migration over existing tables. The [Supabase migration guide](https://supabase.com/docs/guides/deployment/database-migrations) explains this workflow.
+Confirm `sessions`, `session_presence`, and `challenges` are enabled for Postgres Changes in the Supabase Realtime publication. Focus also uses Realtime Presence for connection liveness. Test with two separate accounts/devices, not just two tabs sharing the same account.
 
-If the older Section C migration (`202609120001_challenge_engine.sql`) was already applied, reconcile its recorded version and the actual shared/access schema before using this sequence. Do not blindly rerun it under the new filename or mark unapplied dependencies as complete. Verify the existing schema and migration history, apply missing dependencies in a reviewed migration plan, and ensure both permissions migrations run after their dependencies.
+Core access rules:
 
-Alternatively, use the project's SQL Editor: run all five files once in the listed order on an empty database. If the original shared schema already exists exactly, begin with the second file. If you later switch to CLI migrations, verify the database and mark each successfully executed migration as applied before using `db push`.
+- Room creation/joining uses authenticated `create_room` and `join_room` functions.
+- Users can write only their own phone presence within an accessible room.
+- Challenge actions use `cf_start`, `cf_snapshot`, `cf_submit`, and `cf_cancel`.
+- Named hints are readable by their assigned holder; individual answers stay in `cf_private`.
+- Server routes authenticate the user and validate room/session/topic access before privileged writes.
+- Passwords go directly to Supabase Auth; they are not stored in application tables.
 
-For optional local Supabase development, install Docker and run `npx supabase start`. `supabase/config.toml` enables anonymous sign-ins locally. Use the local URL/public key reported by the CLI in `.env.local`; the hosted Auth setting must be enabled separately.
+## Syllabus and progression details
 
-### Database behavior
+- Paste up to **50,000 characters**, or upload a PDF up to **200 MB / 1,000 pages**.
+- Large PDFs are split in the browser into smaller API batches. Each batch must fit within **3 MB / 50 pages**; a single oversized page is rejected. This is batching, not guaranteed compression to a target file size.
+- Scanned pages must be readable; password-protected PDFs are unsupported. Large books use multiple Gemini requests and take longer.
+- Review extracted topics before saving them. The app stores the topics you choose, rather than storing the original uploaded PDF in a file bucket.
+- Teach-back requires an explanation and a follow-up answer. An explanation alone does not verify a topic. Drafts are retained temporarily in the current browser tab.
+- Personal teaching credit follows verified topics attributed through `last_taught_by`. Completed group rounds contribute challenge wins to their original participants. Ranking combines these counts; percentage progress measures verified topics.
+- Without the member-progress migration, the UI may fall back to the original shared-room leaderboard values. Correct personal scoring requires all migrations.
 
-| Operation | Contract |
-| --- | --- |
-| Create room | `create_room(p_name, p_subject = null, p_exam_date = null)` returns a room UUID; room and creator membership are created atomically |
-| Join room | `join_room(p_join_code)` returns a room UUID; codes are trimmed and case-insensitive; repeated joins are idempotent |
-| Room code | Ten random uppercase hexadecimal characters |
-| Leave room | Delete your own `room_members` row; room contents remain |
+## Deployment
 
-Both RPCs require a signed-in user with a profile. Direct browser insertion into `rooms` or `room_members` is blocked, so clients cannot join a room by guessing its UUID.
+### Full app: Vercel
 
-RLS protects all eight tables. Members can read their rooms and shared feature data; profiles are visible to their owner and room peers. Only the creator can edit room settings. Presence writes are limited to the requesting user within an accessible room. Feature writes validate referenced sessions/topics and assigned users against the room. Challenge clues additionally enforce assigned-user ownership. The leaderboard respects those same access rules.
-
-Browser updates are granted only for mutable fields. Do not send identity/parent fields such as `id`, `room_id`, or `session_id` in a presence update. Use explicit inserts and updates of allowed fields; an upsert that tries to update protected key columns will fail. Direct browser writes to challenges and clues are revoked; use `cf_start`, `cf_submit`, and `cf_cancel` for challenge actions. The auth provider's `profiles` upsert deliberately uses `ignoreDuplicates: true`, which does not update existing rows.
-
-`cf_snapshot` returns only the caller's assigned clues, and direct clue reads enforce the same ownership boundary. Puzzle answers stay in the private database schema and are checked by the server. The original foreign keys have no delete cascades. Session-ending permissions, active-session-only presence writes, and any new scoring rules still require an agreed integration change when those features are wired in.
-
-## Deploy to Vercel
-
-Create/import the **campfire** project under the intended personal Vercel account using [avdheshchhetri/campfire](https://github.com/avdheshchhetri/campfire). Use these settings:
+Import this repository and use the checked-in [`vercel.json`](vercel.json):
 
 | Setting | Value |
 | --- | --- |
 | Framework | Vite |
-| Root directory | Repository root |
-| Install command | `npm ci` |
-| Build command | `npm run build` |
-| Output directory | `dist` |
-| Node.js | 24.x |
-| Production branch | `main` |
+| Root | Repository root |
+| Install | `npm ci` |
+| Build | `npm run build` |
+| Output | `dist` |
+| Node.js | 24.x, matching CI |
 
-Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to both **Preview** and **Production**, then deploy. Environment values are embedded at build time, so redeploy after changing them. `vercel.json` supplies the SPA rewrite for room/session/leaderboard deep links. See [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite).
+Add the environment variables above to the intended deployment environments. Public Supabase variables can be readable configuration; Gemini, service-role, and signing values must be secrets. Do not set `VITE_GITHUB_PAGES=true` for Vercel.
 
-Once the Git integration is connected, feature branches receive preview deployments and merges to `main` trigger production deployments. Confirm the deployment succeeds and directly open a room deep link before treating a checkpoint as live. This repository includes deployment configuration; a build alone does not provision Supabase or establish a live Vercel deployment.
+Redeploy after changing environment values, update Supabase Auth redirect URLs, and apply pending SQL migrations separately. The API routes must be hosted with the frontend at `/api/*`. Verify a room deep link and a real AI request after deployment.
 
-## Integration Notes
+The repository does not establish your hosting plan or spending limits. Check the connected Vercel account/project before deploying; do not assume that a successful build establishes billing settings.
 
-### Shared imports and route contracts
+### Static interface: GitHub Pages
 
-`src/lib/supabaseClient.js` creates the single shared Supabase client. Import it from every feature instead of creating another client. `src/supabaseClient.js` is a compatibility re-export for the existing Campfire module; both paths resolve to the same instance.
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml) builds and publishes on pushes to `main`. In repository Settings → Pages, select **GitHub Actions** as the source.
 
-```jsx
-import { useOutletContext, useParams } from 'react-router-dom';
-import { supabase } from '../../lib/supabaseClient.js';
-import { useAuth } from '../../auth/AuthContext.jsx';
+Pages builds use `/campfire/`, hash-based routing, and the public Supabase configuration in [`config/public-supabase.json`](config/public-supabase.json). Change that public configuration when using a different Supabase project; changing local `.env.local` does not change this Pages build configuration.
 
-// Inside a feature rendered under the room routes:
-const { user, profile, loading, error } = useAuth();
-const { roomId, sessionId } = useParams();
-const { room, activeSession, refreshRoom } = useOutletContext();
+Auth, rooms, focus, leaderboard, and practice puzzles can use Supabase from Pages. **Gemini generation, PDF/text analysis, and teach-back require an API host and are not enabled by adding secrets to a static Pages deployment.** See [GitHub Pages details](docs/github-pages.md).
+
+## Repository structure
+
+```text
+api/                     Serverless API entry points
+server/
+  challenges/            Gemini generation, question validation, route tests
+  syllabus/              PDF analysis, teach-back, signing, and helpers
+  security/              Database permission tests
+  dev/                   Local Vite API bridge
+src/
+  pages/                 Route-level screens
+  components/            Shared layout and theme controls
+  features/
+    auth/                Accounts, guest sessions, and avatars
+    rooms/               Room operations
+    focus/               Orientation, presence, wake lock, and timer
+    syllabus/            Upload, learning map, and teach-back UI
+    challenges/          Questions, clues, round UI, and adapters
+    leaderboard/         Rankings and progress display
+  lib/                   Shared Supabase client
+  styles/                Global styles and theme colors
+supabase/
+  migrations/            Ordered database migrations
+  tests/                 SQL access-control checks
+demo/                    Isolated challenge and syllabus demos
+config/                  Public build configuration
+docs/                    Feature handoffs and setup notes
+.github/workflows/       Verification and Pages deployment
 ```
 
-The import paths above assume a component directly inside `src/features/<feature>/`. `useAuth()` also exposes `session`, `signIn`, `retryProfile`, and `clearError`. The room guard waits for a valid profile and accessible room before rendering feature routes. Outlet context additionally includes `roomLoading` and `roomError`. Call `refreshRoom()` after creating or ending a study session; navigation also refreshes session status every 30 seconds while the page is visible.
+Use the shared client in `src/lib/supabaseClient.js`; `src/supabaseClient.js` is a compatibility export of the same instance. Feature tests live alongside their code. Route composition is in `src/App.jsx`.
 
-| Route | Current component | Integration purpose |
-| --- | --- | --- |
-| `/` | `Landing` | Sign in, create/join a room, open existing rooms |
-| `/room/:roomId` | `RoomDashboard` | Syllabus and room overview placeholder |
-| `/room/:roomId/session/:sessionId` | `Session` | Campfire and challenge integration placeholder |
-| `/room/:roomId/leaderboard` | `Leaderboard` | Shared progress leaderboard |
+| Route | Screen |
+| --- | --- |
+| `/` | Landing, sign-in, room creation/joining |
+| `/account` | Account and avatar settings |
+| `/room/:roomId` | Room overview |
+| `/room/:roomId/syllabus` | Learning map, upload, and teach-back |
+| `/room/:roomId/session/:sessionId` | Session and challenges |
+| `/room/:roomId/session/:sessionId/phone` | Phone presence |
+| `/room/:roomId/session/:sessionId/shared` | Shared focus display |
+| `/room/:roomId/leaderboard` | Room rankings |
 
-All routes render inside `AppLayout`, which owns room navigation, leave-room behavior, and session status. `src/App.jsx` is the shared route-wiring point. Replace the dashboard/session placeholders with agreed feature components there, or coordinate the small composition component needed to host multiple features.
+## Commands and verification
 
-### Folder and branch ownership
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Local app and API handlers |
+| `npm test` | React, helper, server, adapter, and database tests |
+| `npm run typecheck` | TypeScript checks |
+| `npm run build` | Type-check and create the production bundle |
+| `npm run preview` | Preview built assets; not a substitute for deployed API functions |
+| `npm run dev:syllabus` | Isolated simulated syllabus demo |
+| `npm run build:syllabus-demo` | Build that demo separately |
 
-| Teammate feature | Drop components here | Branch |
-| --- | --- | --- |
-| Syllabus | `src/features/syllabus/` | `feature/syllabus` |
-| Campfire | `src/features/campfire/` | `feature/campfire` |
-| Challenges | `src/features/challenges/` | `feature/challenges` |
+`/challenge-demo.html` uses simulated participants and local state. It does not prove live authentication, database, or Gemini integration.
 
-The syllabus and Campfire feature folders contain `.gitkeep` markers; the challenge folder contains Section C's implementation. The preserved phone-presence module remains in `src/campfire/`. Teammates own their feature folders. The shell owner coordinates shared client/auth/layout changes and migrations. **Ping the integrator before pushing an `App.jsx` import or route edit** so those shared changes can be merged cleanly.
+Before merging, run `npm test` and `npm run build`. Database tests apply migrations in PGlite with simulated Supabase auth roles; they cover permissions, private clues/answers, assignment, and round completion. Hosted Auth/email delivery, real Realtime connections, and iOS/Android sensors still require live checks.
 
-At each agreed checkpoint, the integrator reviews the branch, resolves shared wiring, runs `npm test` and `npm run build`, and checks the feature with the configured database. Merge only validated work to `main`, then confirm its Vercel deployment. Branch merges and deployment monitoring are a team workflow, not an autonomous service included in this scaffold.
+Suggested end-to-end check: sign in with two accounts, join the same room/session, generate questions, confirm hints are exchanged, submit both answers, inspect progress, then test face-down/up behavior and navigation on the shared timer.
 
-### Preserved Campfire module: integration still required
+## Troubleshooting
 
-The existing `src/campfire/` files and `docs/section-b-handoff.md` are retained unchanged. That handoff records an earlier assumed contract; the shared SQL migrations are now the source of truth. Before wiring the module into a route:
+| Symptom | Check |
+| --- | --- |
+| “Invalid API key” on sign-in | Use the full project URL and its matching public Supabase key; restart locally or rebuild the deployment |
+| Room creation or joining fails | Sign in, confirm the profile exists, and apply the shared/access migrations |
+| Gemini button is disabled | Select a saved syllabus topic, join the session, and keep its roster within 1–6 participants |
+| AI needs a server / API unavailable | Use configured local development or full API hosting; Pages alone cannot run Gemini |
+| Gemini quota, unavailable-model, or temporary errors | Check server credentials, supported model IDs, and API quota; retry transient failures |
+| Individual questions cannot save | Apply migration 10 and its predecessors, then start a new round |
+| Everyone has equal or stale leaderboard values | Apply migration 8; verify that topics/rounds have actually completed |
+| Avatars do not appear for peers | Apply migration 7 and verify profile read access |
+| No phone readings / focus pauses on lock | Use HTTPS, grant motion permission, keep the phone page visible, and check keep-awake status; simulation is available |
+| Confirmation email returns to the wrong website | Correct Supabase Site URL/allowed redirects and deployment configuration |
+| PDF is rejected | Check overall size/page limits, oversized individual pages, encryption, and scan readability |
 
-1. Change its database `state` reads/writes to the schema's `phone_state`; map values back to any internal `state` objects as needed.
-2. Build the full participant roster from room membership and profiles. Map `display_name` to the module's `name` field. The shared schema has no `avatar_url`; pass `null` or supply a separately agreed UI value.
-3. Adapt presence persistence to the mutable-field grants instead of upserting protected identity fields. Agree any additional rules for ended sessions and host-only controls; the current policies allow room members to manage sessions and users to write their own presence.
-4. Enable the required Supabase Realtime publication/channel access for `sessions` and `session_presence`, then test reconnects, leaving, and permission failures. The app shell itself uses polling and does not require Realtime publication.
-5. Wire phone/shared-screen navigation into the agreed room/session routes, and test on real phones over HTTPS. Existing standalone helper tests do not establish live device or database compatibility.
+## Working on Campfire
 
-The session placeholder remains until that pass is complete. Keep future Campfire work in its assigned feature folder and coordinate any move from the preserved location.
+Keep changes in the matching feature folder, coordinate shared routes/auth/client changes with the team integrator, and add ordered migrations for database changes. Never commit credentials or overwrite another teammate’s work. Include relevant tests and deployment/setup notes with a feature change.
 
-### Leaderboard meaning
-
-The supplied view counts verified and total topics **for the room**, then repeats those counts for each member. It does not attribute verified topics to `last_taught_by`. The UI therefore shows equal ranks for members with equal shared counts, and supports sorting by progress or name without inventing individual scores.
-
-Because the original view uses an inner join to topics, rooms with no topics return no leaderboard rows. The component falls back to the room's member list with zero progress. Per-person teaching credit needs a separately agreed migration; this scaffold preserves the team's original calculation exactly.
-
-## Verification
-
-Run `npm test` and `npm run build` before merging. For database regression checks, use a disposable/local database with all five migrations applied:
-
-```sh
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
-```
-
-In PowerShell, use `$env:DATABASE_URL` in place of `"$DATABASE_URL"`.
-
-`DATABASE_URL` here is a local/test PostgreSQL connection string for `psql`, not a Vite environment value. The suite uses plain SQL assertions and rolls back its fixtures; it is not a pgTAP suite for `supabase test db`.
-
-The challenge database tests apply all five migrations in PGlite with mocked Supabase auth roles/functions and run the shared RLS suite. Checks cover profile idempotence, create/join/leave, all eight RLS-enabled tables, room isolation, cross-room references, presence impersonation, owner-only edits, anonymous access denial, unchanged leaderboard SQL, private clues and answers, challenge RPC behavior, and direct challenge-write denial. This validates PostgreSQL behavior in the test harness; hosted Supabase Auth/API, Vercel deployment, Realtime, and physical phones still need live integration checks.
-
-## A practical 24-hour priority
-
-Finish the shared shell/auth/room flow first, then make the syllabus usable end to end. Integrate Campfire after its schema and device checks, and add challenges last. Keep a working study flow on `main` at each checkpoint; leave unfinished features behind their placeholders.
-
-## Section A: Syllabus PDF upload and Gemini teach-back
-
-Open the room dashboard and choose **Open syllabus**. The module supports PDF (3 MB / 50 pages) and pasted text, topic review, a two-stage teach-back, and an exam warning for unverified topics. Gemini runs only in Vercel server functions; API keys never enter the browser bundle. The shared table columns stay unchanged.
-
-Set `GEMINI_API_KEY` in **Vercel → campfire → Settings → Environment Variables**, then redeploy. For local live development, put it in the ignored root `.env.local` and use `vercel dev`. Configure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `TEACHING_SIGNING_SECRET` there as well. `GEMINI_MODEL` optionally overrides the default `gemini-2.5-flash`.
-
-See [AI activation instructions](docs/ai-setup.md) and [Section A handoff](docs/syllabus-teachback-handoff.md). The isolated, simulated UI demo remains available with `npm run dev:syllabus` at `/syllabus-demo.html`; it does not call Gemini even when a key is configured. `npm run build:syllabus-demo` verifies that entry separately.
-
-## Gemini challenge generation
-
-Live sessions now offer **Generate with Gemini** using a room syllabus topic. See [Gemini setup and integration](docs/gemini-challenge-setup.md) for the server-only environment variables, new migration, API contracts, and demo steps. The practice puzzle bank remains available; no Claude route is included.
-
-## Code organization and accounts
-
-See [Repository map](docs/repository-structure.md) for folder ownership and [Accounts and avatars](docs/accounts-and-avatars.md) for login, guest upgrades, avatar selection, and the required Supabase setup.
+Useful references: [repository map](docs/repository-structure.md), [accounts](docs/accounts-and-avatars.md), [session and challenge updates](docs/session-fixes.md), [focus handoff](docs/section-b-handoff.md), and [syllabus handoff](docs/syllabus-teachback-handoff.md). Older handoffs may describe earlier behavior; the current code and ordered migrations take precedence.
