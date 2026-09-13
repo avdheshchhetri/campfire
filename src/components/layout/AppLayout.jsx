@@ -59,7 +59,7 @@ export default function AppLayout() {
     <div className="app-shell">
       <a href="#main-content" className="skip-link">Skip to content</a>
       <header className="site-header">
-        <Link to="/" className="brand" aria-label="Campfire home"><span className="brand-icon"><Flame size={25} strokeWidth={1.7} /></span>campfire<span className="brand-period">.</span></Link>
+        <Link to="/" className="brand" aria-label="Campfire home"><span className="brand-icon"><Flame size={25} strokeWidth={1.7} /></span>Campfire<span className="brand-period">.</span></Link>
         <span className="header-note">A little focus. A little company.</span>
         <ThemeToggle />
         {profile ? <Link to="/account" className="user-chip" aria-label="Open your account"><Avatar name={profile.display_name} avatarKey={user?.user_metadata?.avatar_key || profile.avatar_key} /><span>{profile.display_name}</span></Link> : <span className="text-sm muted">Study better, together</span>}
