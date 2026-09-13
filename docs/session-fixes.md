@@ -25,3 +25,7 @@ Teach-back now falls back from an unavailable configured model to the quiz model
 Teach-back drafts and signed follow-up attempts now survive in-app navigation within the same user/browser tab. Server-side expiry and verification checks remain authoritative.
 
 Validation: 117 automated tests, TypeScript, GitHub Pages build, live Gemini quiz generation, live structured teach-back question, and browser inspection of the dark exam banner. The production database migration has not been applied by this code push.
+
+## Cross-teammate hints
+
+Apply `supabase/migrations/20260913000300_cross_teammate_hints.sql` after the earlier migrations. New Gemini and practice rounds pass each named hint to the next teammate in the fixed round roster. Everyone works on one shared question and answer; hints say “Hint for [name]” and remain private to their holder until shared aloud. Solo rounds retain every clue. Existing rounds stay unchanged, so start a new round after applying this migration. Gemini is instructed to repeat the identical question and answer format in each clue. Names are added from profiles on the server, not invented by Gemini.

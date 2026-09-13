@@ -101,6 +101,8 @@ describe.sequential('database authorization and lifecycle',()=>{
    for(const id of ids.slice(0,6)) {
      await asUser(id); const value=await snapshot();
      expect(value.challenge.title).toBe('Recursion'); expect(value.clues).toHaveLength(1);
+     const holder = ids.indexOf(id);
+     expect(value.clues[0].clue_text).toContain(`Hint for Player ${(holder + 5) % 6 + 1}\n\n`);
      expect(value.challenge).not.toHaveProperty('full_answer');
      expect(value.clues.map((clue:any) => clue.clue_text)).not.toContain('42');
      await expect(db.query('select answers from cf_private.puzzles')).rejects.toThrow();
@@ -137,6 +139,7 @@ it('supports solo and pair generated rounds without losing a required clue, and 
   const save=()=>db.query('select cf_save_generated($1,$2,$3,$4,$5::jsonb)',[room,session,ids[0],topic,JSON.stringify(payload)]);
   await db.exec('set role service_role'); await save();
   await asUser(ids[0]); expect((await snapshot()).clues).toHaveLength(3);
+  expect((await snapshot()).clues.every((clue:any)=>clue.clue_text.startsWith('Solo hint\n\n'))).toBe(true);
   const before=(await db.query<{solved_count:bigint,user_id:string}>('select * from cf_progress($1)',[room])).rows.find(row=>row.user_id===ids[0])!;
   await submit('42'); await submit('42');
   const after=(await db.query<{solved_count:bigint,user_id:string}>('select * from cf_progress($1)',[room])).rows.find(row=>row.user_id===ids[0])!;
@@ -145,7 +148,10 @@ it('supports solo and pair generated rounds without losing a required clue, and 
   await db.query('insert into session_presence(session_id,user_id) values($1,$2)',[session,ids[1]]);
   await db.exec('set role service_role'); await save();
   const clues=[];
-  for (const id of ids.slice(0,2)) { await asUser(id); clues.push(...(await snapshot()).clues); }
+  for (const id of ids.slice(0,2)) {
+    await asUser(id); const value=await snapshot(); clues.push(...value.clues);
+    expect(value.clues.every((clue:any)=>clue.clue_text.startsWith(`Hint for Player ${id===ids[0]?2:1}\n\n`))).toBe(true);
+  }
   expect(new Set(clues.map(clue=>clue.clue_text)).size).toBe(3);
   await asUser('99999999-9999-4999-8999-999999999999');
   await expect(db.query('select * from cf_progress($1)',[room])).rejects.toThrow();
