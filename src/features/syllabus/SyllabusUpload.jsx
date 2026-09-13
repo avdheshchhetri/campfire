@@ -40,7 +40,7 @@ function SyllabusForm({ roomId, onSaved }) {
     onSaved();
   }
   return <section className={cardClass}>
-    <h2 className="font-serif text-2xl">Turn a syllabus into a study plan</h2>
+    <h2 className="font-sans font-semibold text-2xl">Turn a syllabus into a study plan</h2>
     <p className="mt-2 text-sm leading-6 text-stone-500">Upload a syllabus or short chapter, or paste its text. Review and edit the AI’s suggested topics before adding them.</p>
     <div className="mt-5 flex gap-2" role="group" aria-label="Syllabus input type">{[['text', 'Paste text'], ['pdf', 'Upload PDF']].map(([value, label]) => <button key={value} type="button" className={`${secondaryClass} ${mode === value ? 'bg-emerald-100' : ''}`} aria-pressed={mode === value} disabled={busy} onClick={() => { setMode(value); setTopics(null); setError(''); setMessage(''); }}>{label}</button>)}</div>
     <form className="mt-5 grid gap-4" onSubmit={event => { event.preventDefault(); void act(async () => {

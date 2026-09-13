@@ -43,15 +43,15 @@ export default function Landing() {
   return (
     <div className="landing">
       <section className="welcome-copy">
-        <div className="eyebrow flex items-center gap-2"><span className="tiny-line" />YOUR PLACE TO COME TOGETHER</div>
+        <div className="eyebrow flex items-center gap-2"><span className="tiny-line" />YOUR SHARED FOCUS SPACE</div>
         <h1>Good company.<br />Better <em>focus.</em></h1>
         <p className="welcome-description">Pull up a chair. Bring your questions.<br className="hidden sm:block" /> Make a little progress, together.</p>
         <div className="principles"><span><BookOpen size={17} />One shared syllabus</span><span><Flame size={17} />A space to focus</span><span><Users size={17} />Your kind of people</span></div>
-        <div className="quote-note"><span className="quote-mark">“</span><p>You don’t have to figure<br />everything out alone.</p><span className="quote-line" /></div>
+        <div className="focus-preview"><div className="focus-orbit" aria-hidden="true"><Flame size={35} strokeWidth={1.4} /></div><div><span className="eyebrow">LESS SCROLL. MORE FLOW.</span><p>Phones down. Minds connected. Build momentum with your whole group.</p></div></div>
       </section>
 
       <section className="entry-panel panel">
-        <div className="entry-heading"><span className="soft-icon"><Flame size={23} /></span><span className="eyebrow">MAKE YOURSELF AT HOME</span></div>
+        <div className="entry-heading"><span className="soft-icon"><Flame size={23} /></span><span className="eyebrow">ENTER YOUR STUDY SPACE</span></div>
         {!profile ? <><h2>There’s a seat for you.</h2><p className="muted mb-7">Start with your name. Your group is next.</p><SignIn /></> : <>
           <h2>Find your study circle.</h2><p className="muted mb-6">Start something new, or pick up where your friends are.</p>
           <div className="segmented" role="group" aria-label="Room action">

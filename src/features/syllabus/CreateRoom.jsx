@@ -38,7 +38,7 @@ export default function CreateRoom({ onCreated = () => {} }) {
 
   return <section className={cardClass}>
     <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">Start a study circle</p>
-    <h2 className="mt-2 font-serif text-2xl">Create a room</h2>
+    <h2 className="mt-2 font-sans font-semibold text-2xl">Create a room</h2>
     {created ? <div className="mt-5 space-y-3" role="status"><p>{created.name} is ready. Share this code:</p><p className="font-mono text-3xl tracking-widest text-emerald-800">{created.join_code}</p></div> :
       <form onSubmit={submit} className="mt-5 grid gap-4">
         <Field label="Room name"><input className={inputClass} required maxLength={100} value={name} onChange={e => setName(e.target.value)} disabled={busy || !!pendingRoom.current} placeholder="Tuesday study circle" /></Field>

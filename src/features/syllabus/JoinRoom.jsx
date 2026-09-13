@@ -27,7 +27,7 @@ export default function JoinRoom({ onJoined = () => {} }) {
   }
   return <section className={cardClass}>
     <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">Find your people</p>
-    <h2 className="mt-2 font-serif text-2xl">Join a room</h2>
+    <h2 className="mt-2 font-sans font-semibold text-2xl">Join a room</h2>
     {joined ? <p className="mt-5 text-emerald-800" role="status">You’re in {joined.name}.</p> :
       <form className="mt-5 grid gap-4" onSubmit={submit}>
         <p className="text-sm leading-6 text-stone-500">Ask a teammate for their room code.</p>
