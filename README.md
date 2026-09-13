@@ -236,6 +236,10 @@ group by rm.room_id, rm.user_id, p.display_name;
 ## Team
 
 Built by a team of 4 at HackWesTX 2026.
+- Hitendra Annavarapu
+- Avdhesh Chhetri
+- Charan Suguri
+- Aaryan Lawand
 
 ---
 
