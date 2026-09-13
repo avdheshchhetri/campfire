@@ -339,6 +339,6 @@ Useful references: [repository map](docs/repository-structure.md), [accounts](do
 
 Apply [20260913000600_shared_questions.sql](supabase/migrations/20260913000600_shared_questions.sql) after migration 005, then deploy the app. This adds the shared-question save path while retaining per-player answer checks and completion gating. Existing hint-round history remains available in the database; new session rounds have no clue records. Practice now requires Gemini and API hosting, including when the question is used for practice.
 
-### Optional study minigames
+### Practice preview
 
-Session practice includes Topic pairs (match up to four pairs of syllabus topic names) and Topic scramble (unscramble a syllabus topic title). Games open only when selected, use the room’s saved topics, and require no Gemini or ElevenLabs calls. Topic pairs needs at least two topics; scramble needs one. Scores are personal to the open game, reset when it closes, and never affect the leaderboard, syllabus verification, or shared question completion. The standalone demo uses labelled sample computer science topics and no longer contains the private-clue puzzle flow.
+The standalone preview shows a sample syllabus question without games or hints. Sign in and join a study room to generate questions from your saved syllabus, submit answers, and track group completion.
