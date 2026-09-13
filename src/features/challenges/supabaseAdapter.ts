@@ -6,7 +6,7 @@ export function createSupabaseAdapter({ client, roomId, sessionId }: ChallengeEn
     return data;
   }
   async function post(path: string, body: Record<string, unknown>) {
-    if (import.meta.env.VITE_GITHUB_PAGES === 'true') throw new Error('Gemini needs a server. Use the configured local app; GitHub Pages supports practice puzzles only.');
+    if (import.meta.env.VITE_GITHUB_PAGES === 'true') throw new Error('Gemini needs a server. Use the configured local app; GitHub Pages cannot generate syllabus practice questions.');
     const { data, error } = await client.auth.getSession();
     if (error || !data.session) throw new Error('Sign in before generating a challenge.');
     const response = await fetch(path, {
@@ -32,7 +32,7 @@ export function createSupabaseAdapter({ client, roomId, sessionId }: ChallengeEn
     },
     async start() { await rpc('cf_start', { p_room: roomId, p_session: sessionId }); },
     async startGenerated(input) {
-      await post('/api/generate-challenge-gemini', { roomId, sessionId, ...input, mode: 'individual' });
+      await post('/api/generate-challenge-gemini', { roomId, sessionId, ...input, mode: 'shared' });
     },
     async submit(answer) { return await rpc('cf_submit', { p_room: roomId, p_session: sessionId, p_answer: answer }); },
     async cancel() { await rpc('cf_cancel', { p_room: roomId, p_session: sessionId }); },

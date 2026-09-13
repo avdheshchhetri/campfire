@@ -47,3 +47,10 @@ it('saves individual answers privately and returns only the round ID', async () 
   expect(JSON.stringify(result.body)).not.toContain('full_answer');
   expect(rpc).toHaveBeenCalledWith('cf_save_individual',expect.objectContaining({p_user:'u',p_questions:questions}));
 });
+
+it('saves the shared question server-side without returning its answer',async()=>{
+ mocks.generateGeminiChallenge.mockResolvedValue({question:'Solve x+1=3',full_answer:'2'});
+ const result=await invoke(generate,{mode:'shared'});
+ expect(result.body).toEqual({challengeId:'challenge-id'});
+ expect(rpc).toHaveBeenCalledWith('cf_save_shared_question',expect.objectContaining({p_question:'Solve x+1=3',p_answer:'2',p_user:'u'}));
+});

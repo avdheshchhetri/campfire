@@ -14,7 +14,7 @@ it('requests individual generation and save server-side without receiving answer
   expect(request).toHaveBeenCalledTimes(1);
   expect(request.mock.calls[0][0]).toBe('/api/generate-challenge-gemini');
   expect(request.mock.calls[0][1].headers.Authorization).toBe('Bearer user-jwt');
-  expect(JSON.parse(request.mock.calls[0][1].body)).toEqual({ roomId: 'room', sessionId: 'session', subject: 'Maths', topicTitle: 'Algebra', mode: 'individual' });
+  expect(JSON.parse(request.mock.calls[0][1].body)).toEqual({ roomId: 'room', sessionId: 'session', subject: 'Maths', topicTitle: 'Algebra', mode: 'shared' });
 });
 it('does not save a failed generation or silently use the practice bank', async () => {
   const request = vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: 'Quota exhausted' }) });

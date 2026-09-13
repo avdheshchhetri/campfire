@@ -1,3 +1,4 @@
+import { sharedQuestionSchema, sharedQuestionInstructions, validateSharedQuestion } from './sharedQuestion.js';
 import { ApiError, authorize, requiredEnv, text, uuid } from '../syllabus/teachback.js';
 
 import { variantSchema, variantInstructions, validateVariants, isMathTopic, subjectQuestionSchema, subjectQuestionInstructions, validateSubjectQuestions } from './questionVariants.js';
@@ -63,7 +64,7 @@ export async function challengeContext(req, body) {
   return { roomId, sessionId, subject, topicTitle: topic.data.title, topicId: topic.data.id, user };
 }
 
-export async function generateGeminiChallenge({ subject, topicTitle, individual = false }) {
+export async function generateGeminiChallenge({ subject, topicTitle, individual = false, shared = false }) {
   const maths = isMathTopic(`${subject} ${topicTitle}`);
   const key = requiredEnv('GEMINI_API_KEY');
   const model = process.env.GEMINI_CHALLENGE_MODEL || DEFAULT_CHALLENGE_MODEL;
@@ -83,12 +84,12 @@ Return only the object defined by the JSON schema.`;
     response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: individual ? (maths ? variantInstructions : subjectQuestionInstructions) : instructions }] },
+        systemInstruction: { parts: [{ text: shared ? sharedQuestionInstructions : individual ? (maths ? variantInstructions : subjectQuestionInstructions) : instructions }] },
         contents: [{ role: 'user', parts: [{ text: JSON.stringify({ subject, topicTitle }) }] }],
         generationConfig: {
           maxOutputTokens: 8192,
           responseMimeType: 'application/json',
-          responseJsonSchema: individual ? (maths ? variantSchema : subjectQuestionSchema) : challengeSchema,
+          responseJsonSchema: shared ? sharedQuestionSchema : individual ? (maths ? variantSchema : subjectQuestionSchema) : challengeSchema,
           ...(model.startsWith('gemini-3') ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
         },
       }),
@@ -113,5 +114,5 @@ Return only the object defined by the JSON schema.`;
   let challenge;
   try { challenge = JSON.parse(output); }
   catch { throw new ApiError(502, 'Gemini returned invalid JSON. Please retry.'); }
-  return individual ? (maths ? validateVariants(challenge, `${subject} ${topicTitle}`) : validateSubjectQuestions(challenge)) : validateChallenge(challenge);
+  return shared ? validateSharedQuestion(challenge) : individual ? (maths ? validateVariants(challenge, `${subject} ${topicTitle}`) : validateSubjectQuestions(challenge)) : validateChallenge(challenge);
 }

@@ -26,9 +26,9 @@ export function StartChallenge({ subject, topics, busy, disabled, onGenerate }: 
       {topics.map(topic => <option key={topic.id} value={topic.id}>{topic.title}</option>)}
     </select>
     <button className="cf-primary" disabled={busy || disabled || !selected} onClick={() => void generate()}>
-      {busy ? 'Preparing challenge…' : 'Generate with Gemini'}
+      {busy ? 'Preparing challenge…' : 'Generate practice question with Gemini'}
     </button>
-    <small>Different questions on this topic; maths uses the same format with different numbers. Your hint goes to someone else.</small>
+    <small>One syllabus question for the whole group. Everyone submits their own answer.</small>
     {!subject && <small>This room has no subject tag; the selected topic will guide the puzzle.</small>}
   </div>;
 }

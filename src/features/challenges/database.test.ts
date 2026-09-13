@@ -217,3 +217,19 @@ it('keeps each answer private, blocks skipping, and unlocks only the caller hint
   const duplicate=questions.map(q=>({...q,full_answer:'same'}));
   await expect(db.query('select cf_save_individual($1,$2,$3,$4,$5::jsonb)',[...args.slice(0,4),JSON.stringify(duplicate)])).rejects.toThrow('different answer');
 });
+
+it('shares one syllabus question, keeps answers private and requires every player to solve',async()=>{
+ await db.exec('reset role');
+ const topic='30000000-0000-0000-0000-000000009999';
+ await db.query("insert into syllabus_topics(id,room_id,title) values($1,$2,'Shared algebra')",[topic,room]);
+ await db.query('update sessions set is_active=true,ended_at=null where id=$1',[session]);
+ await db.query("update challenges set status='cancelled' where session_id=$1 and status='active'",[session]);
+ const roster=(await db.query<{user_id:string}>('select user_id from session_presence where session_id=$1 order by user_id',[session])).rows;
+ const owner=roster[0].user_id;
+ const cid=(await db.query<{id:string}>('select cf_save_shared_question($1,$2,$3,$4,$5,$6) as id',[room,session,owner,topic,'Solve x + 1 = 3. Answer with a number.','2'])).rows[0].id;
+ for(const person of roster){await asUser(person.user_id);const value=await snapshot();expect(value.challenge.prompt).toBe('Solve x + 1 = 3. Answer with a number.');expect(value.challenge.shared_question).toBe(true);expect(value.clues).toEqual([]);}
+ await asUser(owner);for(let i=0;i<8;i++)expect(await submit('wrong')).toBe(false);
+ expect((await snapshot()).challenge.penalty_points).toBe(0);expect((await snapshot()).challenge.assistance_hint).toBeNull();
+ for(let i=0;i<roster.length;i++){await asUser(roster[i].user_id);expect(await submit('2')).toBe(true);expect((await snapshot()).challenge.status).toBe(i===roster.length-1?'solved':'active');}
+ await expect(db.query('select * from cf_private.individual_questions where challenge_id=$1',[cid])).rejects.toThrow();
+});

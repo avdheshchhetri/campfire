@@ -1,3 +1,5 @@
+> Current session quizzes show one shared question with optional audio beside it. The previous clue audio integration described below is historical and is no longer rendered on the session page.
+
 # Optional ElevenLabs tutor voice
 
 Campfire’s teach-back AI is Gemini. ElevenLabs reads the displayed text; it does not replace Gemini, grade answers, or change verification status.

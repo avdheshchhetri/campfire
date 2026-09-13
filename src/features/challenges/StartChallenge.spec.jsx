@@ -8,7 +8,7 @@ it('sends the selected topic and room subject only when Gemini is clicked', asyn
   render(<StartChallenge subject="CS" topics={topics} busy={false} onGenerate={onGenerate} />);
   expect(onGenerate).not.toHaveBeenCalled();
   fireEvent.change(screen.getByLabelText('Syllabus topic'), { target: { value: 'two' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Generate with Gemini' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Generate practice question with Gemini' }));
   await waitFor(() => expect(onGenerate).toHaveBeenCalledWith({ subject: 'CS', topicTitle: 'Sorting' }));
 });
 it('requires a topic and ignores duplicate clicks during generation', async () => {
