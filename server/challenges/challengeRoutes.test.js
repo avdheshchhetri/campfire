@@ -54,3 +54,11 @@ it('saves the shared question server-side without returning its answer',async()=
  expect(result.body).toEqual({challengeId:'challenge-id'});
  expect(rpc).toHaveBeenCalledWith('cf_save_shared_question',expect.objectContaining({p_question:'Solve x+1=3',p_answer:'2',p_user:'u'}));
 });
+
+it.each([['PGRST202','schema cache'],['42501','SERVICE_ROLE_KEY'],['P0001','session'],['23502','23502']])('reports safe save diagnostics for %s',async(code,message)=>{
+ mocks.generateGeminiChallenge.mockResolvedValue({question:'Q',full_answer:'A'});
+ rpc.mockResolvedValue({error:{code,message:'private database contents'}});
+ const result=await invoke(generate,{mode:'shared'});
+ expect(result.body.error).toContain(message);
+ expect(result.body.error).not.toContain('private database contents');
+});

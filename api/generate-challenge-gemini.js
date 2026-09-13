@@ -15,7 +15,17 @@ export default async function handler(req, res) {
         p_room: context.roomId, p_session: context.sessionId, p_user: context.user.id,
         p_topic: context.topicId, p_question: challenge.question, p_answer: challenge.full_answer,
       });
-      if (error) throw new ApiError(503, 'Could not save the question. Apply migration 20260913000600_shared_questions.sql in Supabase and retry.');
+      if (error) {
+        const code = typeof error.code === 'string' && /^[A-Z0-9]{5,12}$/.test(error.code) ? error.code : 'UNKNOWN';
+        const messages = {
+          PGRST202: 'The shared-question function is missing from this Supabase project or its API schema cache. Check the migration and reload the schema cache.',
+          '42883': 'A required database function is missing. Check that all Campfire migrations have been applied to this Supabase project.',
+          '42501': 'The server cannot access the question-saving function. Check SUPABASE_SERVICE_ROLE_KEY and its function permissions.',
+          PGRST301: 'Supabase rejected the server credentials. Check SUPABASE_SERVICE_ROLE_KEY belongs to the configured Supabase project.',
+          P0001: 'The session, participants, or topic changed while generating. Reopen the active session and select a current syllabus topic.',
+        };
+        throw new ApiError(code === 'P0001' ? 409 : 503, `${messages[code] || 'The database could not save the question. Check the database logs for this error code.'} (${code})`);
+      }
       return res.status(200).json({challengeId:data});
     }
     if (individual) {
