@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { endSession, startSession, watchSession } from './campfireApi.js';
+import Avatar from '../components/Avatar.jsx';
 
 export function StartSessionButton({ roomId, onStarted }) {
   const [busy, setBusy] = useState(false);
@@ -91,12 +92,12 @@ function SessionDisplay({ sessionId, participants = [], canEnd = false, onEnded 
     <main className="min-h-screen bg-slate-950 p-6 text-slate-100 md:p-12">
       <div className="mx-auto max-w-5xl space-y-8">
         <header><p className="font-semibold text-orange-300">CAMPFIRE MODE</p>
-          <h1 className="mt-2 text-3xl font-bold">Group focus session</h1></header>
+          <h1 className="mt-2 text-3xl font-bold">Group phone focus</h1></header>
         <section className={`rounded-3xl border p-8 text-center ${running ? 'border-emerald-500 bg-emerald-950' : 'border-orange-400 bg-slate-900'}`}>
           <p role="status" className="text-xl">{label}</p>
           <p className="my-5 font-mono text-5xl tabular-nums md:text-8xl" aria-label={`Focus time ${time}`}>{time}</p>
           {!roster.length && <p>Waiting for the session participant list.</p>}
-          {blockers.length > 0 && <p>Waiting for: {blockers.map(person => person.name).join(', ')}</p>}
+          {blockers.length > 0 && <p>Waiting for phones: {blockers.map(person => person.name).join(', ')}</p>}
           {status !== 'ready' && <p>Sync: {status}. The timer waits for a confirmed connection.</p>}
         </section>
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -104,10 +105,9 @@ function SessionDisplay({ sessionId, participants = [], canEnd = false, onEnded 
             const connected = online.has(person.user_id);
             const focused = connected && byUser.get(person.user_id) === 'down';
             return <li key={person.user_id} className={`flex items-center gap-4 rounded-2xl border p-5 ${focused ? 'border-emerald-700 bg-emerald-950' : 'border-red-400 bg-red-950'}`}>
-              {person.avatar_url ? <img src={person.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
-                : <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-full bg-slate-700">{person.name?.slice(0, 1) || '?'}</span>}
+              <Avatar avatarUrl={person.avatar_url} name={person.name} className="grid h-12 w-12 place-items-center rounded-full bg-slate-700" />
               <div><p className={`font-bold ${focused ? 'text-emerald-300' : 'text-red-300'}`}>{person.name}</p>
-                <p className="text-sm">{focused ? 'Down / focused' : !connected ? 'Offline / waiting' : 'Up / flagged'}</p></div>
+                <p className="text-sm">{focused ? 'Phone down / focused' : !connected ? 'Phone offline / waiting' : 'Phone up / flagged'}</p></div>
             </li>;
           })}
         </ul>

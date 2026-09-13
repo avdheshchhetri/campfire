@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowDownUp, ArrowRight, Check, Leaf, RefreshCw, Users } from 'lucide-react';
 import { Link, useOutletContext, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
-import { memberInitials, prepareLeaderboard } from './leaderboardModel.js';
+import { prepareLeaderboard } from './leaderboardModel.js';
+import Avatar from '../../components/Avatar';
 
 const initialState = { roomId: null, rows: [], status: 'loading', error: '' };
 
@@ -34,28 +35,37 @@ export default function Leaderboard() {
         if (!current) return;
         if (result.error) throw result.error;
         let rows = result.data ?? [];
+        // Keep score queries on the shared view; profile details come from
+        // the room roster because the view intentionally has no avatar column.
+        const members = await supabase
+          .from('room_members')
+          .select('user_id, profiles!room_members_user_id_fkey(display_name, avatar_url)')
+          .eq('room_id', roomId);
+        if (!current) return;
+        if (members.error && rows.length === 0) throw members.error;
+        const memberProfiles = new Map((members.data ?? []).map((member) => [
+          member.user_id,
+          Array.isArray(member.profiles) ? member.profiles[0] : member.profiles,
+        ]));
 
         // The schema's view uses an inner join to syllabus_topics, so a room
         // without topics returns no rows. Keep its members visible at zero.
         if (rows.length === 0) {
-          const members = await supabase
-            .from('room_members')
-            .select('user_id, profiles!room_members_user_id_fkey(display_name)')
-            .eq('room_id', roomId);
-          if (!current) return;
-          if (members.error) throw members.error;
           rows = (members.data ?? []).map((member) => {
-            const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+            const profile = memberProfiles.get(member.user_id);
             return {
               room_id: roomId,
               user_id: member.user_id,
               display_name: profile?.display_name || 'Member',
+              avatar_url: profile?.avatar_url,
               verified_count: 0,
               total_topics: 0,
             };
           });
+        } else {
+          rows = rows.map((row) => ({ ...row, avatar_url: memberProfiles.get(row.user_id)?.avatar_url }));
         }
-        if (current) setState({ roomId, rows, status: 'ready', error: '' });
+        if (current) setState({ roomId, rows, status: 'ready', error: members.error ? 'Progress is available, but avatars could not be loaded. Please try again.' : '' });
       } catch (error) {
         if (current) {
           setState((previous) => ({
@@ -180,9 +190,7 @@ export default function Leaderboard() {
                     {String(member.rank).padStart(2, '0')}
                   </span>
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#e7d6c2] bg-[#f1e7d7] text-xs font-semibold text-[#826e50]" aria-hidden="true">
-                      {memberInitials(member.display_name)}
-                    </span>
+                    <Avatar avatarUrl={member.avatar_url} name={member.display_name} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#e7d6c2] bg-[#f1e7d7] text-xs font-semibold text-[#826e50]" />
                     <div className="min-w-0">
                       <p className="break-words text-sm font-semibold">{member.display_name}</p>
                       <p className="mt-1 text-xs text-[#968b7b]">Growing together</p>

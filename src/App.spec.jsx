@@ -44,6 +44,8 @@ function openApp(path = '/') {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  localStorage.clear();
+  localStorage.setItem('campfire.main_device', 'true');
   mocks.configured = true;
   mocks.auth = {
     user: { id: 'member-self' },
@@ -86,6 +88,26 @@ afterEach(() => {
 });
 
 describe('Campfire app integration', () => {
+  it('shows pairing before mounting the main app in a fresh browser', () => {
+    localStorage.clear();
+    openApp('/');
+    expect(screen.getByLabelText('Enter pairing code')).toBeTruthy();
+    expect(mocks.listMyRooms).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Skip, this is my own main device' }));
+    expect(screen.getByLabelText('Room name')).toBeTruthy();
+    expect(localStorage.getItem('campfire.main_device')).toBe('true');
+  });
+
+  it('sends the old phone route through pairing, never orientation or room auth', () => {
+    const listen = vi.spyOn(window, 'addEventListener');
+    openApp(`/room/${room.id}/session/old-session/phone`);
+    expect(screen.getByLabelText('Enter pairing code')).toBeTruthy();
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(listen.mock.calls.some(([name]) => name === 'deviceorientation')).toBe(false);
+    listen.mockRestore();
+  });
+
   it('creates a room from the signed-in form and opens its dashboard', async () => {
     openApp();
     fireEvent.change(screen.getByLabelText('Room name'), { target: { value: room.name } });
@@ -143,7 +165,7 @@ describe('Campfire app integration', () => {
     const request = queries.find((query) => query.table === 'leaderboard');
     expect(request.filters).toContainEqual(['room_id', room.id]);
     expect(request.orders[0]).toEqual(['verified_count', { ascending: false }]);
-    expect(queries.some((query) => query.table === 'room_members')).toBe(false);
+    expect(queries.some((query) => query.table === 'room_members')).toBe(true);
 
     const list = screen.getByRole('list');
     expect(within(list).getAllByRole('listitem')[0].textContent).toContain('Ari');
@@ -166,7 +188,7 @@ describe('Campfire app integration', () => {
     expect(screen.queryByText('Outside member')).toBeNull();
     const memberRequest = queries.find((query) => query.table === 'room_members');
     expect(memberRequest.filters).toContainEqual(['room_id', room.id]);
-    expect(memberRequest.select).toContain('profiles!room_members_user_id_fkey(display_name)');
+    expect(memberRequest.select).toContain('profiles!room_members_user_id_fkey(display_name, avatar_url)');
   });
 
   it.each([

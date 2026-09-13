@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { DEFAULT_AVATAR, isAvatar, normalizeAvatar } from '../lib/avatars';
 
 const AuthContext = createContext(null);
 const profileRequests = new Map();
@@ -9,20 +10,20 @@ function asError(error) {
 }
 
 // Share pending requests across the development StrictMode mount cycle.
-// DO NOTHING on conflicts preserves a member's existing display name.
+// DO NOTHING on conflicts preserves a member's existing name and avatar.
 function ensureProfile(user) {
   if (profileRequests.has(user.id)) return profileRequests.get(user.id);
 
   const request = (async () => {
     const displayName = user.user_metadata?.display_name?.trim() || 'Study partner';
     const { error: insertError } = await supabase.from('profiles').upsert(
-      { id: user.id, display_name: displayName },
+      { id: user.id, display_name: displayName, avatar_url: normalizeAvatar(user.user_metadata?.avatar_url) },
       { onConflict: 'id', ignoreDuplicates: true },
     );
     if (insertError) throw asError(insertError);
 
     const { data, error } = await supabase.from('profiles')
-      .select('id, display_name, created_at')
+      .select('id, display_name, avatar_url, created_at')
       .eq('id', user.id)
       .single();
     if (error) throw asError(error);
@@ -115,7 +116,7 @@ export function AuthProvider({ children }) {
     return () => { active = false; };
   }, [userId]);
 
-  const signIn = useCallback((displayName) => {
+  const signIn = useCallback((displayName, avatarUrl = DEFAULT_AVATAR) => {
     // Multiple submissions share one request and cannot create multiple guests.
     if (signInRequest.current) return signInRequest.current;
     const name = String(displayName ?? '').trim();
@@ -127,6 +128,7 @@ export function AuthProvider({ children }) {
     const request = (async () => {
       if (!supabase) throw new Error('Connect Supabase before signing in.');
       if (!name || name.length > 60) throw new Error('Enter a display name between 1 and 60 characters.');
+      if (!isAvatar(avatarUrl)) throw new Error('Choose one of the available avatars.');
 
       // Recheck storage before creating a guest, including after a failed profile write.
       const { data: saved, error: sessionError } = await supabase.auth.getSession();
@@ -135,7 +137,7 @@ export function AuthProvider({ children }) {
 
       if (!nextSession) {
         const { data, error: authError } = await supabase.auth.signInAnonymously({
-          options: { data: { display_name: name } },
+          options: { data: { display_name: name, avatar_url: avatarUrl } },
         });
         if (authError) throw asError(authError);
         nextSession = data.session;
@@ -186,10 +188,28 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const updateAvatar = useCallback(async (avatarUrl) => {
+    const currentUser = sessionRef.current?.user;
+    if (!supabase || !currentUser) throw new Error('Sign in before changing your avatar.');
+    if (!isAvatar(avatarUrl)) throw new Error('Choose one of the available avatars.');
+    const currentLifecycle = lifecycle.current;
+    const { data, error: updateError } = await supabase.from('profiles')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', currentUser.id)
+      .select('id, display_name, avatar_url, created_at')
+      .single();
+    if (updateError) throw asError(updateError);
+    if (!data) throw new Error('Your avatar could not be saved. Please try again.');
+    if (mounted.current && lifecycle.current === currentLifecycle && sessionRef.current?.user?.id === currentUser.id) {
+      setProfile(data);
+    }
+    return data;
+  }, []);
+
   const clearError = useCallback(() => setError(null), []);
   const value = useMemo(() => ({
-    session, user: session?.user ?? null, profile, loading, error, signIn, retryProfile, clearError,
-  }), [session, profile, loading, error, signIn, retryProfile, clearError]);
+    session, user: session?.user ?? null, profile, loading, error, signIn, retryProfile, updateAvatar, clearError,
+  }), [session, profile, loading, error, signIn, retryProfile, updateAvatar, clearError]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
