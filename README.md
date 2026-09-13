@@ -178,6 +178,8 @@ The SQL files in [`supabase/migrations/`](supabase/migrations/) are the database
 | 11 | [20260913000500_quiz_assistance.sql](supabase/migrations/20260913000500_quiz_assistance.sql) | Distinct answers, eight-attempt hint assistance, point penalties, and next-quiz gating |
 | 12 | [20260913000600_shared_questions.sql](supabase/migrations/20260913000600_shared_questions.sql) | Same syllabus question for everyone, no clues, per-player completion |
 
+| 13 | [20260913000700_room_games.sql](supabase/migrations/20260913000700_room_games.sql) | Room Games, timed voting, shared narrated riddles, and Flashcards |
+
 **SQL Editor:** on an empty project, open each file, copy its full contents into **SQL Editor → New query → Run**, and proceed in the order above. On an existing project, apply only missing migrations after verifying what was already run. Do not rerun the original schema over existing tables.
 
 **Supabase CLI:** if migration history is managed by the CLI:
@@ -382,3 +384,9 @@ New session rounds show the same complete question to everyone and contain no cl
 ### Practice preview
 
 The standalone preview shows a sample syllabus question without games or hints. Sign in and join a study room to generate questions from your saved syllabus, submit answers, and track group completion.
+
+## Room Games and Flashcards
+
+Two additive room tabs reuse the existing theme and navigation. **Games** offers Spark Round (five timed multiple-choice rounds), The Ember Riddle (shared narrated clues and first-correct guessing), and Two Truths, One Lie (discussion, voting, and explanations). Games use taught/verified syllabus topics and have their own scoreboards. **Flashcards** generates topic-based front/back cards for review at any time, with flip, next/previous, and shuffle controls. These do not change existing session quizzes, focus, teach-back, or leaderboard scoring.
+
+Apply [20260913000700_room_games.sql](supabase/migrations/20260913000700_room_games.sql) once, **after all migrations through 006**, then deploy the new API and app. Reuse the existing Gemini and ElevenLabs server keys. [Setup, game rules, audio caching, security, and implementation details](docs/room-games-and-flashcards.md).

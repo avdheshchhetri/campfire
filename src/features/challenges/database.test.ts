@@ -234,3 +234,47 @@ it('shares one syllabus question, keeps answers private and requires every playe
  for(let i=0;i<roster.length;i++){await asUser(roster[i].user_id);expect(await submit('2')).toBe(true);expect((await snapshot()).challenge.status).toBe(i===roster.length-1?'solved':'active');}
  await expect(db.query('select * from cf_private.individual_questions where challenge_id=$1',[cid])).rejects.toThrow();
 });
+
+it('runs room games without leaking answers, accepting duplicate votes, or altering study rounds',async()=>{
+ await db.exec('reset role');
+ const topic='30000000-0000-0000-0000-000000008888';
+ await db.query("insert into syllabus_topics(id,room_id,title,status) values($1,$2,'Recursion','taught')",[topic,room]);
+ const members=(await db.query<{user_id:string}>('select user_id from room_members where room_id=$1 order by user_id',[room])).rows;
+ const owner=members[0].user_id;
+ const payload={rounds:Array.from({length:5},(_,i)=>({prompt_text:`Question ${i}`,options:['A','B','C','D'],correct_option_index:1,explanation:'B is correct.'}))};
+ await db.query('select cf_save_room_game($1,$2,$3,$4)',[room,owner,'trivia',JSON.stringify(payload)]);
+ const snap=async()=> (await db.query<{value:any}>('select cf_game_snapshot($1) as value',[room])).rows[0].value;
+ for(let round=0;round<5;round++){
+  await asUser(owner);let state=await snap();expect(state.round.correct).toBeNull();expect(state.round.explanation).toBeNull();
+  await expect(db.query('select correct_option_index from game_rounds')).rejects.toThrow();
+  await expect(db.query('select * from game_answers')).rejects.toThrow();
+  for(const member of members){await asUser(member.user_id);await db.query('select cf_game_answer($1,$2,1)',[room,state.round.id]);await db.query('select cf_game_answer($1,$2,0)',[room,state.round.id]);}
+  state=await snap();expect(state.phase).toBe('reveal');expect(state.round.correct).toBe(1);expect(state.answers).toHaveLength(members.length);expect(state.players.every((p:any)=>p.score===round+1)).toBe(true);
+  await expect(db.query('select cf_game_answer($1,$2,1)',[room,state.round.id])).rejects.toThrow();
+  await db.exec('reset role');await db.query("update cf_private.game_state set deadline=now()-interval '1 second' where challenge_id=$1",[state.id]);
+  await asUser(owner);state=await snap();expect(state.phase).toBe(round===4?'finished':'question');
+ }
+ await db.exec('reset role');
+ await db.query('select cf_save_room_game($1,$2,$3,$4)',[room,owner,'mystery_voice',JSON.stringify({topic_id:topic,clues:['A function can call itself.','A stopping condition matters.','A smaller problem repeats the same method.']})]);
+ await asUser(owner);let state=await snap();expect(state.answer).toBeNull();expect(state.clues).toHaveLength(1);
+ const clues=await db.query('select clue_text from challenge_clues where challenge_id=$1',[state.id]);expect(clues.rows).toHaveLength(1);
+ expect((await db.query<{value:boolean}>('select cf_game_guess($1,$2,$3) as value',[room,state.id,'recursin'])).rows[0].value).toBe(true);
+ state=await snap();expect(state.phase).toBe('finished');expect(state.winner).toBe(owner);expect(state.answer).toBe('Recursion');
+ await expect(db.query('select cf_game_guess($1,$2,$3)',[room,state.id,'recursion'])).rejects.toThrow();
+ await db.exec('reset role');await db.query('select cf_save_flashcards($1,$2,$3)',[room,owner,JSON.stringify([{topic_id:topic,front_text:'What is recursion?',back_text:'A function calling itself.'}])]);
+ await asUser(owner);expect((await db.query('select * from flashcards where room_id=$1',[room])).rows).toHaveLength(1);
+ await expect(db.query("insert into flashcards(room_id,topic_id,front_text,back_text) values($1,$2,'bad','bad')",[room,topic])).rejects.toThrow();
+});
+it('enforces discussion deadlines and denies outsiders access to room games',async()=>{
+ await db.exec('reset role');
+ const owner=(await db.query<{user_id:string}>('select user_id from room_members where room_id=$1 limit 1',[room])).rows[0].user_id;
+ const payload={rounds:Array.from({length:5},()=>({prompt_text:'Find the false statement',options:['True A','False B','True C'],correct_option_index:1,explanation:'B is false.'}))};
+ const game=(await db.query<{id:string}>('select cf_save_room_game($1,$2,$3,$4) as id',[room,owner,'two_truths',JSON.stringify(payload)])).rows[0].id;
+ await asUser(owner);let state=(await db.query<{value:any}>('select cf_game_snapshot($1) as value',[room])).rows[0].value;
+ expect(state.type).toBe('two_truths');expect(Date.parse(state.deadline)-Date.parse(state.server_now)).toBeGreaterThan(35000);
+ await db.exec('reset role');await db.query("update cf_private.game_state set deadline=now()-interval '1 second' where challenge_id=$1",[game]);
+ await asUser(owner);await expect(db.query('select cf_game_answer($1,$2,1)',[room,state.round.id])).rejects.toThrow();
+ state=(await db.query<{value:any}>('select cf_game_snapshot($1) as value',[room])).rows[0].value;expect(state.phase).toBe('reveal');expect(state.answers).toHaveLength(0);
+ const outsider='00000000-0000-0000-0000-000000009999';await db.exec('reset role');await db.query('insert into auth.users(id) values($1)',[outsider]);await db.query("insert into profiles(id,display_name) values($1,'Outside')",[outsider]);
+ await asUser(outsider);await expect(db.query('select cf_game_snapshot($1)',[room])).rejects.toThrow();expect((await db.query('select * from flashcards where room_id=$1',[room])).rows).toHaveLength(0);
+});

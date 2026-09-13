@@ -1,4 +1,4 @@
-import { ApiError, authorize, bodyOf, requiredEnv, sendError, text, uuid } from '../server/syllabus/teachback.js';
+import { ApiError, adminClient, authorize, bodyOf, requiredEnv, sendError, text, uuid } from '../server/syllabus/teachback.js';
 
 // Sarah. One consistent tutor voice, overridable server-side.
 export const TUTOR_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
@@ -13,10 +13,23 @@ export default async function handler(req, res) {
   try {
     const body = bodyOf(req, 12000);
     const roomId = uuid(body.roomId, 'Room ID');
-    const spokenText = text(body.text, 'Speech text', 2000);
+    let spokenText = body.clueId ? '' : text(body.text, 'Speech text', 2000);
+    let cachedClue = null;
     const mood = body.mood ?? 'neutral';
     if (!Object.hasOwn(MOODS, mood)) throw new ApiError(400, 'Choose neutral, encouraging, or concerned.');
-    await authorize(req, roomId);
+    const {client} = await authorize(req, roomId);
+    if (body.clueId) {
+      const clueId = uuid(body.clueId, 'Clue ID');
+      const {data: clue, error} = await client.from('challenge_clues').select('id,clue_text,audio_url,challenge_id').eq('id',clueId).is('assigned_to',null).eq('revealed',true).maybeSingle();
+      if(error || !clue) throw new ApiError(404,'This clue is not revealed or available.');
+      const game=await client.from('challenges').select('id').eq('id',clue.challenge_id).eq('room_id',roomId).eq('type','mystery_voice').maybeSingle();
+      if(game.error || !game.data)throw new ApiError(404,'This clue does not belong to this room game.');
+      if(clue.audio_url)return res.status(200).json({audioUrl:clue.audio_url});
+      const claim=await adminClient().rpc('cf_claim_game_audio',{p_clue:clue.id});
+      if(claim.error)throw new ApiError(503,'Could not prepare clue audio.');
+      if(!claim.data)return res.status(202).json({pending:true});
+      cachedClue=clue.id;spokenText=text(clue.clue_text,'Clue',2000);
+    }
     const key = requiredEnv('ELEVENLABS_API_KEY').trim();
     const voice = process.env.ELEVENLABS_VOICE_ID?.trim() || TUTOR_VOICE_ID;
     if (!/^[a-zA-Z0-9]{20}$/.test(voice)) throw new ApiError(503, 'Check the server tutor voice ID.');
@@ -31,6 +44,12 @@ export default async function handler(req, res) {
       if (!(response.headers.get('content-type') || '').startsWith('audio/')) throw new ApiError(502, 'Voice returned an invalid audio response.');
       const audio = Buffer.from(await response.arrayBuffer());
       if (!audio.length || audio.length > 2 * 1024 * 1024) throw new ApiError(502, 'Voice returned an invalid audio size.');
+      if(cachedClue){
+        const audioUrl=`data:audio/mpeg;base64,${audio.toString('base64')}`;
+        const saved=await adminClient().from('challenge_clues').update({audio_url:audioUrl}).eq('id',cachedClue);
+        if(saved.error)throw new ApiError(503,'Audio could not be cached. You can still read the clue.');
+        return res.status(200).json({audioUrl});
+      }
       return res.status(200).json({ audio: audio.toString('base64'), mimeType: 'audio/mpeg' });
     } catch (error) {
       if (error instanceof ApiError) throw error;

@@ -18,6 +18,9 @@
     },
     "api/speak.js": {
       "maxDuration": 30
+    },
+    "api/room-study.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [

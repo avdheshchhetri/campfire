@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-const mocks=vi.hoisted(()=>({authorize:vi.fn()}));
-vi.mock('../syllabus/teachback.js',async original=>({...await original(),authorize:mocks.authorize}));
+const mocks=vi.hoisted(()=>({authorize:vi.fn(),adminClient:vi.fn()}));
+vi.mock('../syllabus/teachback.js',async original=>({...await original(),authorize:mocks.authorize,adminClient:mocks.adminClient}));
 import speak,{TUTOR_VOICE_ID,MOODS} from '../../api/speak.js';
 import {ApiError} from '../syllabus/teachback.js';
 const roomId='10000000-0000-0000-0000-000000000001';
@@ -50,4 +50,18 @@ it.each([
  expect(result.body.error).toContain(message);
  expect(JSON.stringify(result.body)).not.toContain('test-server-secret');
  expect(JSON.stringify(result.body)).not.toContain('private provider details');
+});
+
+it('does not synthesize hidden clues or regenerate cached clue audio',async()=>{
+ const query={select(){return this;},eq(){return this;},is(){return this;},maybeSingle:vi.fn()};
+ mocks.authorize.mockResolvedValue({client:{from:()=>query}});
+ query.maybeSingle.mockResolvedValueOnce({data:null});
+ expect((await invoke({clueId:roomId})).code).toBe(404);expect(request).not.toHaveBeenCalled();
+ query.maybeSingle.mockResolvedValueOnce({data:{id:roomId,challenge_id:roomId,audio_url:'data:audio/mpeg;base64,AQID'}}).mockResolvedValueOnce({data:{id:roomId}});
+ expect((await invoke({clueId:roomId})).body.audioUrl).toBe('data:audio/mpeg;base64,AQID');expect(request).not.toHaveBeenCalled();
+});
+it('returns pending when another participant is generating clue audio',async()=>{
+ const query={select(){return this;},eq(){return this;},is(){return this;},maybeSingle:vi.fn().mockResolvedValueOnce({data:{id:roomId,challenge_id:roomId,clue_text:'A clue'}}).mockResolvedValueOnce({data:{id:roomId}})};
+ mocks.authorize.mockResolvedValue({client:{from:()=>query}});mocks.adminClient.mockReturnValue({rpc:vi.fn().mockResolvedValue({data:false})});
+ expect((await invoke({clueId:roomId})).body).toEqual({pending:true});expect(request).not.toHaveBeenCalled();
 });

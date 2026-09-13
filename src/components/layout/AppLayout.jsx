@@ -1,7 +1,7 @@
 import Avatar from '../../features/auth/Avatar';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useMatch, useNavigate, useOutletContext } from 'react-router-dom';
-import { ArrowLeft, Flame, LayoutDashboard, LogOut, Trophy } from 'lucide-react';
+import { ArrowLeft, BookOpen, Puzzle, Flame, LayoutDashboard, LogOut, Trophy } from 'lucide-react';
 import { useAuth } from '../../features/auth/AuthContext';
 import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
 import { leaveRoom } from '../../features/rooms/roomsApi';
@@ -69,7 +69,7 @@ export default function AppLayout() {
       {import.meta.env.VITE_GITHUB_PAGES === 'true' && <div className="setup-banner" role="status">This hosted preview supports rooms and focus sessions. AI analysis needs a connected server and is available in your configured local app.</div>}
       {roomId && room && <div className="room-nav">
         <div className="room-identity"><Link to="/" aria-label="Back to your rooms"><ArrowLeft size={18} /></Link><div><span className="eyebrow">STUDY ROOM</span><p>{room.name}</p></div></div>
-        <nav aria-label="Room navigation"><NavLink to={`/room/${roomId}`} end><LayoutDashboard size={17} />Overview</NavLink><NavLink to={`/room/${roomId}/leaderboard`}><Trophy size={17} />Leaderboard</NavLink>{activeSession && <NavLink to={`/room/${roomId}/session/${activeSession.id}`}><Flame size={17} />Session</NavLink>}</nav>
+        <nav aria-label="Room navigation"><NavLink to={`/room/${roomId}`} end><LayoutDashboard size={17} />Overview</NavLink><NavLink to={`/room/${roomId}/leaderboard`}><Trophy size={17} />Leaderboard</NavLink>{activeSession && <NavLink to={`/room/${roomId}/session/${activeSession.id}`}><Flame size={17} />Session</NavLink>}<NavLink to={`/room/${roomId}/games`}><Puzzle size={17} />Games</NavLink><NavLink to={`/room/${roomId}/flashcards`}><BookOpen size={17} />Flashcards</NavLink></nav>
         <div className="room-actions"><span className={`session-status ${activeSession ? 'live' : ''}`}><span />{activeSession ? 'Session live' : 'No active session'}</span><button className="icon-button" onClick={leave} disabled={leaving} title="Leave room" aria-label={leaving ? 'Leaving room' : 'Leave room'}><LogOut size={18} /></button></div>
       </div>}
       {leaveError && <div role="alert" className="error-banner mx-auto max-w-6xl">{leaveError}</div>}

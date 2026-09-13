@@ -1,3 +1,4 @@
+import roomStudy from '../../api/room-study.js';
 import { loadEnv } from 'vite';
 import speak from '../../api/speak.js';
 import parseSyllabus from '../../api/parse-syllabus.js';
@@ -6,6 +7,7 @@ import generateChallenge from '../../api/generate-challenge-gemini.js';
 import saveChallenge from '../../api/save-challenge.js';
 
 const routes = {
+  '/api/room-study': roomStudy,
   '/api/speak': speak,
   '/api/parse-syllabus': parseSyllabus,
   '/api/verify-teaching': verifyTeaching,

@@ -1,3 +1,5 @@
+import Games from './pages/Games';
+import Flashcards from './pages/Flashcards';
 import { FocusClockProvider } from './features/focus/FocusClockProvider';
 import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './features/auth/AuthContext';
@@ -26,6 +28,8 @@ export default function App() {
               <Route path="session/:sessionId/phone" element={<Session view="phone" />} />
               <Route path="session/:sessionId/shared" element={<Session view="shared" />} />
               <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="games" element={<Games />} />
+              <Route path="flashcards" element={<Flashcards />} />
               <Route path="syllabus" element={<Syllabus />} />
             </Route>
             <Route path="*" element={<NotFound />} />
