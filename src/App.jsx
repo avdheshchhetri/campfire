@@ -8,8 +8,6 @@ import NotFound from './pages/NotFound';
 import Leaderboard from './features/leaderboard/Leaderboard.jsx';
 import Syllabus from './pages/Syllabus.jsx';
 
-// Integration point: add each feature import here, then replace the appropriate
-// dashboard/session placeholder below. Keep this one shared wiring file small.
 export default function App() {
   return (
     <AuthProvider>
@@ -20,6 +18,8 @@ export default function App() {
             <Route path="room/:roomId" element={<RequireRoom />}>
               <Route index element={<RoomDashboard />} />
               <Route path="session/:sessionId" element={<Session />} />
+              <Route path="session/:sessionId/phone" element={<Session view="phone" />} />
+              <Route path="session/:sessionId/shared" element={<Session view="shared" />} />
               <Route path="leaderboard" element={<Leaderboard />} />
               <Route path="syllabus" element={<Syllabus />} />
             </Route>

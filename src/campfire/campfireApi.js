@@ -24,11 +24,21 @@ export async function currentUserId() {
 }
 
 export async function writeState(sessionId, userId, state) {
-  const { error } = await supabase.from('session_presence').upsert(
-    { session_id: sessionId, user_id: userId, state },
-    { onConflict: 'session_id,user_id' },
+  if (!['up', 'down'].includes(state)) throw new Error('Invalid phone state.');
+  const session = await supabase.from('sessions').select('is_active,ended_at')
+    .eq('id', sessionId).single();
+  if (session.error) throw session.error;
+  if (!session.data.is_active || session.data.ended_at) throw new Error('This session has ended.');
+  const inserted = await supabase.from('session_presence').upsert(
+    { session_id: sessionId, user_id: userId },
+    { onConflict: 'session_id,user_id', ignoreDuplicates: true },
   );
+  if (inserted.error) throw inserted.error;
+  const { data, error } = await supabase.from('session_presence')
+    .update({ phone_state: state, updated_at: new Date().toISOString() })
+    .eq('session_id', sessionId).eq('user_id', userId).select('user_id');
   if (error) throw error;
+  if (!data?.length) throw new Error('Could not save your phone state. Rejoin the room.');
 }
 
 // Both screens use the same topic. Realtime Presence supplies connection liveness;
@@ -47,14 +57,14 @@ export function watchSession(sessionId, { userId, onSnapshot, onOnline, onStatus
         const [session, presence] = await Promise.all([
           supabase.from('sessions').select('id,is_active,ended_at')
             .eq('id', sessionId).single(),
-          supabase.from('session_presence').select('user_id,state')
+          supabase.from('session_presence').select('user_id,phone_state')
             .eq('session_id', sessionId),
         ]);
         if (session.error) throw session.error;
         if (presence.error) throw presence.error;
         // A change during the fetch invalidates its results. Fetch again.
         if (!dirty && !closed && connected) {
-          onSnapshot(session.data, presence.data);
+          onSnapshot(session.data, presence.data.map(row => ({ ...row, state: row.phone_state })));
           onStatus('ready');
         }
       }
