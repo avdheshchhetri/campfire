@@ -176,7 +176,6 @@ The SQL files in [`supabase/migrations/`](supabase/migrations/) are the database
 | 9 | [20260913000300_cross_teammate_hints.sql](supabase/migrations/20260913000300_cross_teammate_hints.sql) | Named hints passed to teammates |
 | 10 | [20260913000400_individual_questions.sql](supabase/migrations/20260913000400_individual_questions.sql) | Individual questions, private answers, and per-person completion |
 | 11 | [20260913000500_quiz_assistance.sql](supabase/migrations/20260913000500_quiz_assistance.sql) | Distinct answers, eight-attempt hint assistance, point penalties, and next-quiz gating |
-
 | 12 | [20260913000600_shared_questions.sql](supabase/migrations/20260913000600_shared_questions.sql) | Same syllabus question for everyone, no clues, per-player completion |
 
 **SQL Editor:** on an empty project, open each file, copy its full contents into **SQL Editor → New query → Run**, and proceed in the order above. On an existing project, apply only missing migrations after verifying what was already run. Do not rerun the original schema over existing tables.
@@ -321,7 +320,8 @@ Suggested end-to-end check: sign in with two accounts, join the same room/sessio
 | Gemini button is disabled | Select a saved syllabus topic, join the session, and keep its roster within 1–6 participants |
 | AI needs a server / API unavailable | Use configured local development or full API hosting; Pages alone cannot run Gemini |
 | Gemini quota, unavailable-model, or temporary errors | Check server credentials, supported model IDs, and API quota; retry transient failures |
-| Individual questions cannot save | Apply migrations 10–11 and their predecessors, then start a new round |
+| Shared question cannot save (`42P01`) | A referenced table is missing. Run the diagnostic below; if `cf_private.individual_questions` is NULL, follow the dependency recovery steps |
+| Save function exists but saving still fails | Function existence does not prove its tables exist. Check the error code and database dependencies below |
 | Everyone has equal or stale leaderboard values | Apply migration 8; verify that topics/rounds have actually completed |
 | Avatars do not appear for peers | Apply migration 7 and verify profile read access |
 | No phone readings / focus pauses on lock | Use HTTPS, grant motion permission, keep the phone page visible, and check keep-awake status; simulation is available |
@@ -335,9 +335,49 @@ Keep changes in the matching feature folder, coordinate shared routes/auth/clien
 Useful references: [repository map](docs/repository-structure.md), [accounts](docs/accounts-and-avatars.md), [session and challenge updates](docs/session-fixes.md), [focus handoff](docs/section-b-handoff.md), and [syllabus handoff](docs/syllabus-teachback-handoff.md). Older handoffs may describe earlier behavior; the current code and ordered migrations take precedence.
 
 
-### Shared-question rollout
+### Shared-question rollout and missing-table recovery
 
-Apply [20260913000600_shared_questions.sql](supabase/migrations/20260913000600_shared_questions.sql) after migration 005, then deploy the app. This adds the shared-question save path while retaining per-player answer checks and completion gating. Existing hint-round history remains available in the database; new session rounds have no clue records. Practice now requires Gemini and API hosting, including when the question is used for practice.
+Shared questions depend on earlier database migrations even though the current interface no longer uses hints. The `cf_private.individual_questions` table stores each participant’s answer and completion state for the same shared question. Do not skip its migration because of its name.
+
+For a fresh Supabase project, apply **all migrations in the setup table in order**. Pushing to GitHub or redeploying Vercel does not apply SQL to Supabase.
+
+If saving fails with **`42P01`**, PostgreSQL could not find a referenced relation. In **Supabase → your Campfire project → SQL Editor → New query**, run this read-only check:
+
+```sql
+select name, to_regclass(name) as existing_table
+from unnest(array[
+  'public.room_members',
+  'public.sessions',
+  'public.session_presence',
+  'public.syllabus_topics',
+  'public.challenges',
+  'cf_private.puzzles',
+  'cf_private.rounds',
+  'cf_private.individual_questions'
+]) as name;
+```
+
+A **NULL** value means that table is missing in the selected project. The save function can exist even when a table it uses is missing.
+
+If **only `cf_private.individual_questions` is NULL** and the earlier migrations are installed, restore the dependencies in this order:
+
+1. [20260913000400_individual_questions.sql](supabase/migrations/20260913000400_individual_questions.sql) — creates private per-player questions and answer tracking.
+2. [20260913000500_quiz_assistance.sql](supabase/migrations/20260913000500_quiz_assistance.sql) — supplies the next layer of functions and columns.
+3. [20260913000600_shared_questions.sql](supabase/migrations/20260913000600_shared_questions.sql) — applies the current shared-question behavior over those dependencies.
+
+For **each file**, open its **Raw** contents on GitHub, copy the entire SQL, and paste it into a **separate empty New query** in Supabase. Click **Run** and confirm success before continuing. **Stop on any error** and inspect it before running the next file. Do not append corrected SQL below an older copy: the old statements execute first. Do not delete tables or functions, or rerun the original schema over existing data.
+
+The current version of migration 006 supports reruns; this does **not** mean every older migration is safe to repeat. If `cf_private.individual_questions` already exists, investigate the missing relation in the database logs instead of blindly repeating migrations 004 and 005.
+
+After successful setup, request a refresh of Supabase’s API schema cache:
+
+```sql
+notify pgrst, 'reload schema';
+```
+
+Then open the latest deployed app and try generating once. If the error remains, check that the app’s Supabase configuration points to the **same project** where the SQL was run. If all listed tables exist, inspect the database log for the exact `relation "…" does not exist` message; a trigger or another function may reference an additional table.
+
+New session rounds show the same complete question to everyone and contain no clues. Each participant must still answer correctly before advancing. Historical hint-round records remain in the database. Syllabus practice requires Gemini and API hosting.
 
 ### Practice preview
 
