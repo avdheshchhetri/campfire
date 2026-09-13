@@ -191,5 +191,14 @@ html:not(.dark) .cf-shell input::placeholder { color: var(--light-muted); opacit
 .read-aloud-button:focus-visible { outline: 2px solid var(--light-accent); outline-offset: 3px; }
 .read-aloud-button:disabled { cursor: wait; opacity: .6; }
 .read-aloud-status { font-size: .8rem; line-height: 1.5; color: var(--light-muted); }
-.dark .read-aloud-button { color: #b8f994; background: #17232c; border-color: #506474; }
+.dark .read-aloud-button { color: var(--paint-accent-a6f470); background: var(--paint-surface-111b24); border-color: var(--paint-border-344650); }
 .dark .read-aloud-status { color: #94a3b8; }
+
+/* Color only the small feature/navigation icons, not their labels or controls. */
+.app-shell .feature-card > svg.lucide-book-open,
+.room-nav nav a[href$="/flashcards"] > svg { color: var(--icon-study); }
+.app-shell .feature-card > svg.lucide-flame,
+.room-nav nav a > svg.lucide-flame { color: var(--icon-focus); }
+.app-shell .feature-card > svg.lucide-puzzle,
+.room-nav nav a[href$="/games"] > svg { color: var(--icon-play); }
+.room-nav nav a[href$="/leaderboard"] > svg { color: var(--icon-award); }
