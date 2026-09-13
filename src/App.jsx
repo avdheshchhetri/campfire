@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import AppLayout, { RequireRoom } from './components/AppLayout';
 import Landing from './pages/Landing';
@@ -8,10 +8,12 @@ import NotFound from './pages/NotFound';
 import Leaderboard from './features/leaderboard/Leaderboard.jsx';
 import Syllabus from './pages/Syllabus.jsx';
 
+const Router = import.meta.env.VITE_GITHUB_PAGES === 'true' ? HashRouter : BrowserRouter;
+
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <Router>
         <Routes>
           <Route element={<AppLayout />}>
             <Route index element={<Landing />} />
@@ -26,7 +28,7 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      </Router>
     </AuthProvider>
   );
 }

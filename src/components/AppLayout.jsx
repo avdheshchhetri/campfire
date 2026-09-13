@@ -63,6 +63,7 @@ export default function AppLayout() {
       </header>
 
       {!isSupabaseConfigured && <div className="setup-banner" role="status"><strong>Connect your study space.</strong> Add your Supabase URL and public key to <code>.env.local</code> to enable sign-in and rooms. See README for setup.</div>}
+      {import.meta.env.VITE_GITHUB_PAGES === 'true' && <div className="setup-banner" role="status">This hosted preview supports rooms and focus sessions. AI analysis needs a connected server and is available in your configured local app.</div>}
       {roomId && room && <div className="room-nav">
         <div className="room-identity"><Link to="/" aria-label="Back to your rooms"><ArrowLeft size={18} /></Link><div><span className="eyebrow">STUDY ROOM</span><p>{room.name}</p></div></div>
         <nav aria-label="Room navigation"><NavLink to={`/room/${roomId}`} end><LayoutDashboard size={17} />Overview</NavLink><NavLink to={`/room/${roomId}/leaderboard`}><Trophy size={17} />Leaderboard</NavLink>{activeSession && <NavLink to={`/room/${roomId}/session/${activeSession.id}`}><Flame size={17} />Session</NavLink>}</nav>

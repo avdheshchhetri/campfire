@@ -11,3 +11,11 @@ The session page now links to `/room/:roomId/session/:sessionId/phone` and `/roo
 Enable Postgres Changes for `sessions` and `session_presence` in Supabase for immediate database notifications; the client also reconciles periodically. Physical-phone sensors require a deployed HTTPS URL. Localhost only addresses this computer. Timer state is local to the display and resets on reload.
 
 The challenge demo is explicitly simulated. Live Gemini generation still requires a real server key and service-role configuration. The existing challenge engine still uses the earlier clue distribution rules; the Phase 0 report's taught-topic, unrevealed-clue and hint-rotation findings remain outstanding. No new RLS changes were applied by this integration patch.
+
+## Large PDF uploads
+
+The syllabus uploader accepts PDFs up to 200 MiB and 1,000 pages. Small documents use the existing single-request route. Larger documents are prepared in a browser worker and split by page count and actual encoded byte size into at most 50 pages / 3 MiB per API call. Pages retain their original content; this is not guaranteed image compression to a target size. An individual page that still exceeds the batch byte limit is rejected with its page number.
+
+Analysis prepares pages in a worker while running up to three AI requests concurrently, with completed-page progress and cancellation. Results are merged in document order even when requests finish out of order. The request count is unchanged, but the burst rate is higher and may encounter provider rate limits. Topic titles are deduplicated across batches, preserving first occurrence. Empty administrative batches are skipped; other failures stop the job without saving a partial topic list. The user reviews the combined list before inserting topics. Cancel stops further calls but cannot undo a provider request already received. Reloading does not resume analysis. Each batch consumes an AI request, and large documents may exceed quota or available browser memory; a desktop browser is recommended.
+
+The server retains its original 3 MiB/50-page validation for every batch, so Vercel's body limit is respected and no storage bucket or public document URL is introduced. Google receives the individual PDF batches. Supabase still stores only the reviewed topic titles and progress.

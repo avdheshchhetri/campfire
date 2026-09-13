@@ -6,7 +6,8 @@ export async function requireUser() {
   return data.user;
 }
 
-export async function callStudyAPI(path, body) {
+export async function callStudyAPI(path, body, { signal } = {}) {
+  if (import.meta.env.VITE_GITHUB_PAGES === 'true') throw new Error('AI analysis needs a server. Use the configured local Campfire app; GitHub Pages hosts the interface only.');
   const { data, error } = await supabase.auth.getSession();
   if (error || !data.session) throw new Error('Your sign-in expired. Please sign in again.');
   let response;
@@ -14,7 +15,7 @@ export async function callStudyAPI(path, body) {
     response = await fetch(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` },
-      body: JSON.stringify(body), signal: AbortSignal.timeout(65000),
+      body: JSON.stringify(body), signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(65000)]) : AbortSignal.timeout(65000),
     });
   } catch { throw new Error('The request timed out or the network is unavailable. Please retry.'); }
   let result;

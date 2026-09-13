@@ -74,7 +74,7 @@ describe('syllabus and teaching screens', () => {
       container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
       await new Promise(resolve => setTimeout(resolve, 50));
     });
-    expect(api.callStudyAPI).toHaveBeenCalledWith('/api/parse-syllabus', { roomId: demoRoomId, pdf: { name: 'syllabus.pdf', data: btoa('%PDF-1.7\nfrontend-test') } });
+    expect(api.callStudyAPI).toHaveBeenCalledWith('/api/parse-syllabus', { roomId: demoRoomId, pdf: { name: 'syllabus.pdf', data: btoa('%PDF-1.7\nfrontend-test') } }, { signal: expect.any(AbortSignal) });
     expect(container.textContent).toContain('Review 1 topics');
   });
   it('previews parsed topics and adds only new titles without resetting progress', async () => {

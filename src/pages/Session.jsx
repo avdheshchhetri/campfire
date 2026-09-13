@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useOutletContext, useParams } from 'react-router-dom';
+import { Link, useOutletContext, useParams, useHref } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import SessionChallenges from '../features/challenges/SessionChallenges.jsx';
 import PhonePresencePage from '../campfire/PhonePresencePage.jsx';
@@ -53,6 +53,8 @@ export default function Session({ view = 'overview' }) {
 }
 
 function FocusDisplay({ roomId, sessionId, phonePath, onEnded }) {
+  const phoneHref = useHref(phonePath);
+  const phoneUrl = new URL(phoneHref, window.location.href).href;
   const [participants, setParticipants] = useState([]);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -80,7 +82,7 @@ function FocusDisplay({ roomId, sessionId, phonePath, onEnded }) {
   }, [roomId]);
   return <>
     <section className="panel p-5 mb-5"><p>Everyone in this room is included in the focus timer. Each member must open the phone page, sign in and enable detection.</p>
-      <p className="mt-3 break-all">Phone page: <a className="underline" href={phonePath}>{window.location.origin}{phonePath}</a></p>
+      <p className="mt-3 break-all">Phone page: <a className="underline" href={phoneHref}>{phoneUrl}</a></p>
       <p className="muted text-sm mt-2">On a real phone, use the deployed HTTPS address. This localhost link opens only on this computer. Focus time resets when this display reloads.</p>
     </section>
     {error && <p className="error-banner mb-4" role="alert">Couldn’t load the group: {error}</p>}

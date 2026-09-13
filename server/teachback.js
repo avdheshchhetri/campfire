@@ -100,7 +100,7 @@ export async function geminiJSON(system, input, maxTokens = 1500, pdf = null) {
     if (response.status === 404) throw new ApiError(503, 'The configured Gemini model is unavailable. Check GEMINI_MODEL.');
     if (pdf && response.status === 400) throw new ApiError(422, 'Gemini could not process this PDF or request. Check the server key, or try fewer pages or pasted text.');
     throw new ApiError(response.status === 429 ? 429 : 502,
-      response.status === 429 ? 'The AI is busy. Wait a moment and retry.' : 'The AI service is unavailable. Please retry later.');
+      response.status === 429 ? 'The AI is busy. Wait a moment and retry.' : `Gemini returned HTTP ${response.status}. Please retry; if this continues, try a smaller chapter.`);
   }
   let payload;
   try { payload = await response.json(); }

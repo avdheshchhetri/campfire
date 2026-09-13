@@ -6,6 +6,7 @@ export function createSupabaseAdapter({ client, roomId, sessionId }: ChallengeEn
     return data;
   }
   async function post(path: string, body: Record<string, unknown>) {
+    if (import.meta.env.VITE_GITHUB_PAGES === 'true') throw new Error('Gemini needs a server. Use the configured local app; GitHub Pages supports practice puzzles only.');
     const { data, error } = await client.auth.getSession();
     if (error || !data.session) throw new Error('Sign in before generating a challenge.');
     const response = await fetch(path, {
