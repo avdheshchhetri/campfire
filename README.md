@@ -24,9 +24,10 @@ Upload or paste a syllabus (including PDFs). An AI breaks it into topics. Teach 
 Start a session and pair your phone as your distraction device. The group's shared timer only runs while every paired phone is face-down — flip one up, and it's flagged by name on the group's screen until it goes back down.
 
 **🧩 Challenge Engine**
-Mid-session questions generated from your own syllabus. Everyone sees the same question, answers separately, and moves on once all participants answer correctly. Optional ElevenLabs narration sits beside the question. Older hint rounds remain as history; new session quizzes do not distribute teammate clues.
+Mid-session puzzles generated from your own syllabus, split into pieces so no one person can solve it alone — clues are handed to different teammates and rotate as hints are used, forcing the group to actually talk it out.
 
-**🎮 Games** *(Spark Round, The Ember Riddle, Two Truths One Lie — see below)*
+**🎮 Games**
+Three group games generated from your own syllabus: **Spark Round** (rapid-fire trivia with live scoring), **The Ember Riddle** (an ElevenLabs-narrated mystery — clues are read aloud and the room buzzes in together), and **Two Truths, One Lie** (AI-generated statement sets the group debates and votes on).
 
 **🗂️ Flashcards**
 AI-generated flashcards from your syllabus topics, browsable anytime in a room.
@@ -35,10 +36,10 @@ AI-generated flashcards from your syllabus topics, browsable anytime in a room.
 Tracks verified syllabus coverage per person, per room — not just who showed up, who actually learned it.
 
 **👤 Profiles & Device Pairing**
-Optional Auth0 Universal Login, with Google social sign-in enabled through the Auth0 dashboard. Existing guest/email accounts remain available when Auth0 is not configured. Profiles keep their Supabase UUID and avatar selection. Tabledown opens the phone focus view; sign in on the phone with the same account to use it across devices.
+Guest profiles with avatars, plus a pairing-code flow that lets your phone "borrow" your laptop's identity for orientation tracking only — no separate login needed for your phone.
 
 **🌗 Light/Dark Theme**
-Dark by default; a white-and-blue light theme is available via a toggle in the nav.
+Dark by default; a white-and-blue light theme is available via a toggle in the nav. Typeset in Fraunces (headings) and IBM Plex Sans (body/UI).
 
 ---
 
@@ -47,8 +48,8 @@ Dark by default; a white-and-blue light theme is available via a toggle in the n
 | Track | Status |
 |---|---|
 | Best Use of Gemini API | ✅ Built — powers syllabus parsing / challenge generation |
-| Best Use of ElevenLabs | ✅ Implemented — optional spoken questions, session recaps, and Ember Riddle narration; requires server key and voice access |
-| Best Use of Auth0 | ✅ Implemented — Universal Login + UUID session bridge; Google connection and deployment settings still need dashboard setup |
+| Best Use of ElevenLabs | 🚧 In progress — spoken AI follow-up questions, session recaps, and The Ember Riddle game |
+| Best Use of Auth0 | 🚧 In progress — login flow being wired into the main-device experience |
 | Best Use of Solana | ⏸️ Parked — devnet completion certificates, lowest priority |
 | Best .Tech Domain | — |
 
@@ -59,8 +60,9 @@ Dark by default; a white-and-blue light theme is available via a toggle in the n
 ## Tech stack
 
 - **Frontend:** React + Vite, Tailwind CSS
-- **Backend/Data:** Supabase (Postgres, Auth, Realtime, Storage)
-- **AI:** Gemini (syllabus parsing, teach-back verification, challenge/game generation)
+- **Backend/Data:** Supabase (Postgres, Realtime, Storage)
+- **Auth:** Auth0 (login), sitting alongside Supabase's existing `profiles` table via an `auth0_id` link — not a full replacement of the guest-profile system
+- **AI:** Claude & Gemini (syllabus parsing, teach-back verification, challenge/game generation)
 - **Voice:** ElevenLabs
 - **Deployment:** Vercel
 - **Package manager:** pnpm
@@ -83,15 +85,22 @@ pnpm install
 
 ### 2. Set up Supabase
 1. Create a project at [supabase.com](https://supabase.com).
-2. Apply all files in [`supabase/migrations/`](supabase/migrations/) in filename order using **SQL Editor → New query → Run**. Existing projects should apply only missing migrations.
-3. Keep Row Level Security enabled. The migrations supply the room and identity permissions required by the app. Keep the Supabase Email provider enabled, including when using Auth0.
-4. Copy your Project URL and anon/public key from Project Settings → API.
+2. In the SQL Editor, run the schema below to create all tables.
+3. For hackathon purposes, disable Row Level Security on every table (`alter table <name> disable row level security;`) so reads/writes aren't silently blocked.
+4. Copy your Project URL and anon public key from Project Settings → API.
 
 ### 3. Environment variables
-Copy [`.env.example`](.env.example) to `.env.local` and fill in your Supabase, Gemini, and optional ElevenLabs settings. Keep service-role and provider secrets server-side, without a `VITE_` prefix.
-
-For Auth0, follow [the complete setup guide](docs/auth0-setup.md): configure `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, and `VITE_AUTH0_AUDIENCE`, plus matching server `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, and `AUTH0_AUDIENCE`. No Auth0 client secret is needed. Enable the Google social connection for the SPA to show it on Universal Login. Without all three public settings, existing Supabase login remains active.
-**Important:** these same values also need to be added in your Vercel project's dashboard under Settings → Environment Variables — `.env.local` only powers your local dev server, not the deployed site.
+Create a `.env.local` file:
+```
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+CLAUDE_API_KEY=your-claude-key
+GEMINI_API_KEY=your-gemini-key
+ELEVENLABS_API_KEY=your-elevenlabs-key
+VITE_AUTH0_DOMAIN=your-auth0-domain
+VITE_AUTH0_CLIENT_ID=your-auth0-client-id
+```
+**Important:** these same values also need to be added in your Vercel project's dashboard under Settings → Environment Variables — `.env.local` only powers your local dev server, not the deployed site. In Vercel, add the Supabase/Auth0 values (the `VITE_`-prefixed ones) as **Config** — they end up in the browser bundle regardless, so there's nothing to hide. Add the Claude/Gemini/ElevenLabs keys as **Secret** — those must stay server-side only.
 
 ### 4. Run locally
 ```bash
@@ -103,37 +112,138 @@ Push to `main` — if the repo is connected to Vercel, it deploys automatically.
 
 ---
 
-## Database setup and Auth0 identity
+## Database schema
 
-The ordered [migration files](supabase/migrations/) are the executable source of truth; do not substitute an abbreviated schema or disable their access policies. Pushing GitHub code or redeploying Vercel does not apply SQL in Supabase.
+```sql
+create table profiles (
+  id uuid references auth.users primary key,
+  display_name text not null,
+  avatar_url text,
+  created_at timestamp default now()
+);
 
-For an existing up-to-date Campfire database, Auth0 adds only [`20260913000900_auth0_profiles.sql`](supabase/migrations/20260913000900_auth0_profiles.sql). It adds `profiles.auth0_id text unique` and protects browser writes to that mapping. No other table shape changes. Fresh databases need all earlier migrations too.
+create table rooms (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  subject text,
+  join_code text unique not null,
+  exam_date date,
+  created_by uuid references profiles(id),
+  created_at timestamp default now()
+);
 
-Auth0 login is verified server-side at `/api/auth0-session`. A backing Supabase Auth user provides the UUID required by the existing `profiles.id` foreign key. The server resolves the profile and exchanges a single-use login token for a normal Supabase session; existing features continue querying UUIDs and using `auth.uid()` unchanged.
+create table room_members (
+  room_id uuid references rooms(id),
+  user_id uuid references profiles(id),
+  primary key (room_id, user_id)
+);
 
-Existing guest/email accounts are **not automatically merged** with Auth0 by email. First-time Auth0 login creates a separate account; previous accounts and room data stay intact. Returning to the same Auth0 identity reuses its UUID, avatar, and memberships. Sign-out clears the local Supabase session and signs out of Auth0.
+create table syllabus_topics (
+  id uuid primary key default gen_random_uuid(),
+  room_id uuid references rooms(id),
+  title text not null,
+  order_index int,
+  status text default 'untouched',
+  last_taught_by uuid references profiles(id),
+  last_taught_at timestamp
+);
 
-Use the full local/Vercel app for Auth0: GitHub Pages cannot host its API route. See [Auth0 setup and verification](docs/auth0-setup.md) for dashboard URLs, Google connection, environment values, and deployment checks.
+create table sessions (
+  id uuid primary key default gen_random_uuid(),
+  room_id uuid references rooms(id),
+  started_at timestamp default now(),
+  ended_at timestamp,
+  is_active boolean default true
+);
 
-## Room games and flashcards
+create table session_presence (
+  session_id uuid references sessions(id),
+  user_id uuid references profiles(id),
+  phone_state text default 'up',
+  updated_at timestamp default now(),
+  primary key (session_id, user_id)
+);
 
-- **Spark Round:** five questions, no countdown. Everyone answering reveals the result, or use **End question and reveal answer**. Review the explanation, then select **Next question**.
-- **The Ember Riddle:** progressively specific shared clues, optional cached narration, and a winning buzz-in guess.
-- **Two Truths, One Lie:** discuss and vote within 40 seconds, then review the false statement and explanation.
-- **Flashcards:** generate from saved syllabus topics; flip, browse, and shuffle. Whole-syllabus generation saves one topic at a time.
-- **End game for everyone** closes an active game after confirmation. Game scores remain separate from the study leaderboard.
+create table challenges (
+  id uuid primary key default gen_random_uuid(),
+  room_id uuid references rooms(id),
+  session_id uuid references sessions(id),
+  type text not null, -- 'split_puzzle' | 'trivia' | 'mystery_voice' | 'two_truths'
+  topic_id uuid references syllabus_topics(id),
+  status text default 'active',
+  created_at timestamp default now()
+);
 
-[Game setup and rules](docs/room-games-and-flashcards.md) · [Repository map](docs/repository-structure.md) · [Auth0 setup](docs/auth0-setup.md)
+create table challenge_clues (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id uuid references challenges(id),
+  assigned_to uuid references profiles(id), -- null = visible to whole room
+  clue_text text not null,
+  audio_url text,
+  revealed boolean default true,
+  order_index int
+);
+
+create table game_rounds (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id uuid references challenges(id),
+  round_index int,
+  prompt_text text not null,
+  options jsonb not null,
+  correct_option_index int not null,
+  created_at timestamp default now()
+);
+
+create table game_answers (
+  id uuid primary key default gen_random_uuid(),
+  round_id uuid references game_rounds(id),
+  user_id uuid references profiles(id),
+  selected_option_index int,
+  is_correct boolean,
+  answered_at timestamp default now()
+);
+
+create table flashcards (
+  id uuid primary key default gen_random_uuid(),
+  room_id uuid references rooms(id),
+  topic_id uuid references syllabus_topics(id),
+  front_text text not null,
+  back_text text not null,
+  created_at timestamp default now()
+);
+
+create table paired_devices (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) not null,
+  device_label text,
+  pairing_code text unique not null,
+  local_token text unique,
+  paired_at timestamp,
+  created_at timestamp default now()
+);
+
+create view leaderboard as
+select
+  rm.room_id,
+  rm.user_id,
+  p.display_name,
+  count(*) filter (where st.status = 'verified') as verified_count,
+  count(*) as total_topics
+from room_members rm
+join profiles p on p.id = rm.user_id
+join syllabus_topics st on st.room_id = rm.room_id
+group by rm.room_id, rm.user_id, p.display_name;
+```
 
 ---
 
 ## Team
 
 Built by a team of 4 at HackWesTX 2026.
-- Hitendra Annavarapu
-- Avdhesh Chhetri
-- Charan Suguri
-- Aaryan Lawand
+Hitendra Annavarapu (Consolidated all the codes and compiled them and added them to one, codeed the minigames)
+Charan Suguri (Created the the entire session creation of a study room)
+Avdhesh chhetri (Motion sensing: "tabledown" feature and contributed to Hitendra's work)
+Aaryan Lawand (UI)
 
 ---
 
