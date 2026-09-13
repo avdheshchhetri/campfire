@@ -23,6 +23,7 @@ async function applyMigrations(target: PGlite) {
  const migrations = new URL('../../../supabase/migrations/', import.meta.url);
  for (const file of readdirSync(migrations).filter(file => file.endsWith('.sql')).sort()) {
    await target.exec(readFileSync(new URL(file, migrations), 'utf8'));
+   if (file === '20260913000600_shared_questions.sql') await target.exec(readFileSync(new URL(file, migrations), 'utf8')); // Reruns must preserve the original delegates.
  }
 }
 beforeAll(async()=> {

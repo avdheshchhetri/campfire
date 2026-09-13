@@ -27,9 +27,13 @@ begin
 end; $$;
 revoke all on function public.cf_save_shared_question(uuid,uuid,uuid,uuid,text,text) from public,anon,authenticated;
 grant execute on function public.cf_save_shared_question(uuid,uuid,uuid,uuid,text,text) to service_role;
-alter function public.cf_snapshot(uuid,uuid) rename to cf_snapshot_before_shared_question;
+do $$ begin
+ if to_regprocedure('public.cf_snapshot_before_shared_question(uuid,uuid)') is null then
+  alter function public.cf_snapshot(uuid,uuid) rename to cf_snapshot_before_shared_question;
+ end if;
+end $$;
 revoke all on function public.cf_snapshot_before_shared_question(uuid,uuid) from public,anon,authenticated;
-create function public.cf_snapshot(p_room uuid,p_session uuid) returns jsonb language plpgsql security definer set search_path='' as $$
+create or replace function public.cf_snapshot(p_room uuid,p_session uuid) returns jsonb language plpgsql security definer set search_path='' as $$
 declare result jsonb; shared boolean;
 begin
  result:=public.cf_snapshot_before_shared_question(p_room,p_session);
@@ -39,9 +43,13 @@ begin
 end; $$;
 revoke all on function public.cf_snapshot(uuid,uuid) from public,anon;
 grant execute on function public.cf_snapshot(uuid,uuid) to authenticated;
-alter function public.cf_submit(uuid,uuid,text) rename to cf_submit_before_shared_question;
+do $$ begin
+ if to_regprocedure('public.cf_submit_before_shared_question(uuid,uuid,text)') is null then
+  alter function public.cf_submit(uuid,uuid,text) rename to cf_submit_before_shared_question;
+ end if;
+end $$;
 revoke all on function public.cf_submit_before_shared_question(uuid,uuid,text) from public,anon,authenticated;
-create function public.cf_submit(p_room uuid,p_session uuid,p_answer text) returns boolean language plpgsql security definer set search_path='' as $$
+create or replace function public.cf_submit(p_room uuid,p_session uuid,p_answer text) returns boolean language plpgsql security definer set search_path='' as $$
 declare result boolean;
 begin
  result:=public.cf_submit_before_shared_question(p_room,p_session,p_answer);
