@@ -141,7 +141,7 @@ Open the address printed by Vite, normally `http://127.0.0.1:5173`. The developm
 | `SUPABASE_ANON_KEY` | Server | Same public key, used when validating the caller’s session and permissions |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret/server only** | Privileged database access for verified teaching results and generated questions |
 | `ELEVENLABS_API_KEY` | **Secret/server only, optional** | ElevenLabs text-to-speech; add to `.env.local` or Vercel environment variables |
-| `ELEVENLABS_VOICE_ID` | Server configuration, optional | Fixed tutor voice override; defaults to Talia — Warm Soft Guide |
+| `ELEVENLABS_VOICE_ID` | Server configuration, optional | Fixed tutor voice override; defaults to Sarah |
 | `GEMINI_API_KEY` | **Secret/server only** | Google Gemini API access |
 | `TEACHING_SIGNING_SECRET` | **Secret/server only** | Random secret of at least 32 characters for signed teach-back attempts |
 | `GEMINI_MODEL` | Server configuration, optional | Syllabus analysis/teach-back model override |
@@ -229,7 +229,7 @@ Click the small sound icon beside a quiz question, teach-back question, feedback
 
 Add `ELEVENLABS_API_KEY=your_key_here` to the repository-root `.env.local` and restart local development. For the deployed full app, add the same name as a **Secret** in Vercel’s environment variables and redeploy. Never use a `VITE_` prefix for this key. GitHub Pages cannot run `/api/speak`. No additional database migration is needed.
 
-The fixed tutor voice is **Talia — Warm Soft Guide** (`OZ0L6eISlOejga3XjDFt`), using Eleven Multilingual v2. Add that voice to your ElevenLabs account if required. [Voice setup, route contract, and integration additions](docs/elevenlabs-read-aloud.md).
+The fixed tutor voice is **Sarah** (`EXAVITQu4vr4xnSDxMaL`), using Eleven Multilingual v2. Account eligibility still applies; changing voices does not bypass plan restrictions. [Voice setup, route contract, and integration additions](docs/elevenlabs-read-aloud.md).
 
 ## Deployment
 

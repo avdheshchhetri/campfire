@@ -1,7 +1,7 @@
 import { ApiError, authorize, bodyOf, requiredEnv, sendError, text, uuid } from '../server/syllabus/teachback.js';
 
-// Talia — Warm Soft Guide. One consistent tutor voice, overridable server-side.
-export const TUTOR_VOICE_ID = 'OZ0L6eISlOejga3XjDFt';
+// Sarah. One consistent tutor voice, overridable server-side.
+export const TUTOR_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
 export const MOODS = {
   neutral: { stability: 0.65, similarity_boost: 0.75, style: 0.1, speed: 1.0, use_speaker_boost: true },
   encouraging: { stability: 0.5, similarity_boost: 0.75, style: 0.25, speed: 1.03, use_speaker_boost: true },

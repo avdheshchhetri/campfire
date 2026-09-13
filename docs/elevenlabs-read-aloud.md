@@ -19,9 +19,9 @@ Do not put this secret in Git, `config/public-supabase.json`, a React component,
 
 ## One tutor voice
 
-Chosen voice: **Talia — Warm Soft Guide**, ID `OZ0L6eISlOejga3XjDFt`. This is the warm-guide replacement linked from [ElevenLabs’ default-voice documentation](https://elevenlabs.io/docs/help-center/product/voices/my-voices/what-are-default-voices).
+Chosen voice: **Sarah**, ID `EXAVITQu4vr4xnSDxMaL`. This is the soft female premade voice listed in [ElevenLabs’ TTS examples](https://github.com/elevenlabs/skills/blob/main/text-to-speech/SKILL.md).
 
-[Open Talia in the Voice Library](https://elevenlabs.io/app/voice-library?search=OZ0L6eISlOejga3XjDFt). Add it to your account if needed. An optional server variable `ELEVENLABS_VOICE_ID` overrides the voice consistently across all calls; the client cannot choose or randomize a voice.
+[Find Sarah](https://elevenlabs.io/app/voice-library?search=EXAVITQu4vr4xnSDxMaL). Add it to your account if needed. An optional server variable `ELEVENLABS_VOICE_ID` overrides the voice consistently across all calls; the client cannot choose or randomize a voice.
 
 Model: `eleven_multilingual_v2`. The `neutral`, `encouraging`, and `concerned` presets adjust stability, style and speed while keeping the same voice. These are gentle delivery settings, not guaranteed emotion controls; the wording also influences delivery. See [ElevenLabs TTS](https://elevenlabs.io/docs/overview/capabilities/text-to-speech) and [Create speech API](https://elevenlabs.io/docs/api-reference/text-to-speech/convert).
 
@@ -134,3 +134,7 @@ The speech route distinguishes rejected credentials, missing Text to Speech perm
 - If an older deployment still shows the generic “Check the ElevenLabs key and voice access” message, deploy the latest commit to receive the specific error.
 
 See [ElevenLabs error documentation](https://elevenlabs.io/docs/eleven-api/resources/errors) and [API key permissions](https://elevenlabs.io/docs/overview/administration/workspaces/api-keys).
+
+### Switching from the previous tutor voice
+
+Change an existing hosting `ELEVENLABS_VOICE_ID` override to `EXAVITQu4vr4xnSDxMaL` (Sarah), or remove the override to use the new code default, then redeploy. An old environment override takes precedence over the updated default. Sarah is a premade female voice, but access is account-dependent: ElevenLabs documents restrictions for newer accounts and retirement of Default voices on December 31, 2026. This change does not guarantee free API access. See [Default voice availability](https://elevenlabs.io/docs/help-center/product/voices/my-voices/how-do-i-access-eleven-labs-default-voices).
