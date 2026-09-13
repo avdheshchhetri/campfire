@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '../supabaseClient.js';
+import { supabase } from '../../supabaseClient.js';
 import { currentUserId, watchSession, writeState } from './campfireApi.js';
 import { createStateWriter, orientationState } from './orientation.js';
 

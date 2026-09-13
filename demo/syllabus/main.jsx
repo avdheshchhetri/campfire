@@ -2,7 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import SyllabusTracker from '../../src/features/syllabus/SyllabusTracker.jsx';
 import { demoData, demoRoomId, notifyDemo } from './supabaseClient.js';
-import '../../src/styles.css';
+import '../../src/styles/app.css';
 
 // Deliberately scoped to this demo entry point: no API keys, no real AI calls,
 // no persistence. Production never imports this file.

@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import { ApiError } from './teachback.js';
-import { MAX_PDF_BYTES, MAX_PDF_PAGES } from '../src/features/syllabus/pdfUpload.js';
+import { MAX_PDF_BYTES, MAX_PDF_PAGES } from '../../src/features/syllabus/pdfUpload.js';
 
 export async function validatePDF(value) {
   if (!value || typeof value.name !== 'string' || !/\.pdf$/i.test(value.name) || value.name.length > 200 || typeof value.data !== 'string') {

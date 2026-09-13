@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
 
 const AuthContext = createContext(null);
 const profileRequests = new Map();
@@ -22,7 +22,7 @@ function ensureProfile(user) {
     if (insertError) throw asError(insertError);
 
     const { data, error } = await supabase.from('profiles')
-      .select('id, display_name, created_at')
+      .select('*')
       .eq('id', user.id)
       .single();
     if (error) throw asError(error);

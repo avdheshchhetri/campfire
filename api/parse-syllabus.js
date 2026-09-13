@@ -1,6 +1,6 @@
-import { authorize, bodyOf, geminiJSON, sendError, text, uuid, validateTopics } from '../server/teachback.js';
-import { ApiError } from '../server/teachback.js';
-import { validatePDF } from '../server/pdf.js';
+import { authorize, bodyOf, geminiJSON, sendError, text, uuid, validateTopics } from '../server/syllabus/teachback.js';
+import { ApiError } from '../server/syllabus/teachback.js';
+import { validatePDF } from '../server/syllabus/pdf.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');

@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import { expect, it } from 'vitest';
-import { splitPDF } from '../src/features/syllabus/pdfChunks.js';
+import { splitPDF } from '../../src/features/syllabus/pdfChunks.js';
 async function collect(bytes, options) {
   const chunks = [];
   for await (const chunk of splitPDF(bytes, options)) chunks.push(chunk);

@@ -114,3 +114,14 @@ describe.sequential('database authorization and lifecycle',()=>{
    await asUser(ids[0]); await expect(start()).rejects.toThrow(); await expect(submit('2')).rejects.toThrow();
  });
 });
+
+it('allows only self avatar updates and rejects unknown avatar keys', async () => {
+  await asUser(ids[0]);
+  await db.query("update profiles set avatar_key='fox' where id=$1", [ids[0]]);
+  expect((await db.query<{avatar_key:string}>('select avatar_key from profiles where id=$1',[ids[0]])).rows[0].avatar_key).toBe('fox');
+  await db.query("update profiles set avatar_key='owl' where id=$1", [ids[1]]);
+  await db.exec('reset role');
+  expect((await db.query<{avatar_key:string}>('select avatar_key from profiles where id=$1',[ids[1]])).rows[0].avatar_key).toBe('initials');
+  await asUser(ids[0]);
+  await expect(db.query("update profiles set avatar_key='invalid' where id=$1",[ids[0]])).rejects.toThrow();
+});

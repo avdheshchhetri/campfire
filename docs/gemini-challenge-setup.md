@@ -67,7 +67,7 @@ The requested generation response contains the answer and all clues, so the init
 - `ChallengeEngine.tsx` exposes the new control before a round and after solving one, alongside the existing practice path.
 - `SessionChallenges.jsx` loads the room's topics and joins the authenticated user to the session without overwriting existing phone state.
 - `Session.jsx` and `RoomDashboard.jsx` connect the feature to the app's real routes.
-- `server/challengeGeneration.js` contains the provider request, output validation and room/topic checks. Both API handlers are thin wrappers around these shared checks.
+- `server/challenges/challengeGeneration.js` contains the provider request, output validation and room/topic checks. Both API handlers are thin wrappers around these shared checks.
 
 No existing handoff files or their named interfaces were renamed. No Gemini SDK or new runtime dependency is required; the server uses Node's `fetch`.
 

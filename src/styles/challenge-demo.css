@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "./theme.css";
-@config "../tailwind.config.js";
+@config "../../tailwind.config.js";
 @custom-variant dark (&:where(.dark, .dark *));
-@import "./features/challenges/challenges.css";
+@import "../features/challenges/challenges.css";
 @theme { --font-sans: "IBM Plex Sans", sans-serif; }
 :root{font-family:var(--font-sans);color:var(--paint-primary-e5edf4);background:var(--paint-page-090e13);font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button,a,input,select{-webkit-tap-highlight-color:transparent}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--paint-accent-ce6b41);outline-offset:4px}button{transition:background .18s,transform .18s}button:not(:disabled):hover{filter:brightness(.96)}.cf-demo-bar{background:var(--paint-surface-e9ede4);padding:9px 28px;font-size:11px;color:var(--paint-primary-526052);display:flex;justify-content:space-between;gap:12px;align-items:center}.cf-demo-bar strong{font-size:9px;letter-spacing:1.1px}.cf-demo-bar select{margin-left:8px;background:var(--paint-surface-fff);border:1px solid var(--paint-border-cbd3c5);border-radius:5px;padding:3px 8px}

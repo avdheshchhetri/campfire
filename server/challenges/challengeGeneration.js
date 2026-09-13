@@ -1,4 +1,4 @@
-import { ApiError, authorize, requiredEnv, text, uuid } from './teachback.js';
+import { ApiError, authorize, requiredEnv, text, uuid } from '../syllabus/teachback.js';
 
 export const DEFAULT_CHALLENGE_MODEL = 'gemini-3.8-flash';
 export const challengeSchema = {

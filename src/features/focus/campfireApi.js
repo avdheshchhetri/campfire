@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient.js';
+import { supabase } from '../../supabaseClient.js';
 
 export async function startSession(roomId) {
   if (!roomId) throw new Error('A room is required.');

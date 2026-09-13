@@ -1,7 +1,7 @@
 import {
   ApiError, adminClient, authorize, bodyOf, geminiJSON, nextTeachingTimestamp, readAttempt, sendError,
   signAttempt, text, uuid, validateQuestion, validateVerdict,
-} from '../server/teachback.js';
+} from '../server/syllabus/teachback.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');

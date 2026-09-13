@@ -12,7 +12,7 @@
     "preview": "vite preview --config vite.config.js --configLoader native --host 127.0.0.1",
     "test": "npm run test:react && npm run test:unit && npm run test:challenges",
     "test:react": "vitest run --config vite.config.js --configLoader native",
-    "test:unit": "node --test src/features/leaderboard/leaderboard.test.js src/campfire/section-b.test.mjs",
+    "test:unit": "node --test src/features/leaderboard/leaderboard.test.js src/features/focus/section-b.test.mjs",
     "test:challenges": "vitest run --config vitest.config.ts --configLoader native",
     "typecheck": "tsc --noEmit",
     "dev:syllabus": "vite --config vite.syllabus-demo.config.ts --host 127.0.0.1 --port 5174",

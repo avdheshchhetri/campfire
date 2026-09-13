@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
 
 function getClient() {
   if (!supabase) throw new Error('Connect Supabase to use study rooms.');

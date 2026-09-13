@@ -1,5 +1,5 @@
-import { ApiError, adminClient, bodyOf, sendError } from '../server/teachback.js';
-import { challengeContext, validateChallenge } from '../server/challengeGeneration.js';
+import { ApiError, adminClient, bodyOf, sendError } from '../server/syllabus/teachback.js';
+import { challengeContext, validateChallenge } from '../server/challenges/challengeGeneration.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useOutletContext, useParams, useHref } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import SessionChallenges from '../features/challenges/SessionChallenges.jsx';
-import PhonePresencePage from '../campfire/PhonePresencePage.jsx';
-import SharedScreen from '../campfire/SharedScreen.jsx';
+import PhonePresencePage from '../features/focus/PhonePresencePage.jsx';
+import SharedScreen from '../features/focus/SharedScreen.jsx';
 
 export default function Session({ view = 'overview' }) {
   const { roomId, sessionId } = useParams();
@@ -65,11 +65,11 @@ function FocusDisplay({ roomId, sessionId, phonePath, onEnded }) {
       loading = true;
       try {
         const { data, error } = await supabase.from('room_members')
-          .select('user_id,profiles!room_members_user_id_fkey(display_name)').eq('room_id', roomId);
+          .select('user_id,profiles!room_members_user_id_fkey(*)').eq('room_id', roomId);
         if (error) throw error;
         if (current) {
           setParticipants(data.map(member => ({ user_id: member.user_id,
-            name: (Array.isArray(member.profiles) ? member.profiles[0] : member.profiles)?.display_name || 'Study partner', avatar_url: null })));
+            name: (Array.isArray(member.profiles) ? member.profiles[0] : member.profiles)?.display_name || 'Study partner', avatar_key: (Array.isArray(member.profiles) ? member.profiles[0] : member.profiles)?.avatar_key, avatar_url: null })));
           setError('');
         }
       } catch (cause) {

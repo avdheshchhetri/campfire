@@ -1,3 +1,4 @@
+import Avatar from '../auth/Avatar';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDownUp, ArrowRight, Check, Leaf, RefreshCw, Users } from 'lucide-react';
 import { Link, useOutletContext, useParams } from 'react-router-dom';
@@ -40,7 +41,7 @@ export default function Leaderboard() {
         if (rows.length === 0) {
           const members = await supabase
             .from('room_members')
-            .select('user_id, profiles!room_members_user_id_fkey(display_name)')
+            .select('user_id, profiles!room_members_user_id_fkey(*)')
             .eq('room_id', roomId);
           if (!current) return;
           if (members.error) throw members.error;
@@ -50,11 +51,16 @@ export default function Leaderboard() {
               room_id: roomId,
               user_id: member.user_id,
               display_name: profile?.display_name || 'Member',
+              avatar_key: profile?.avatar_key,
               verified_count: 0,
               total_topics: 0,
             };
           });
         }
+        try {
+          const profiles = await supabase.from('profiles').select('*').in('id', rows.map(row => row.user_id));
+          if (!profiles.error) rows = rows.map(row => ({ ...row, avatar_key: profiles.data?.find(profile => profile.id === row.user_id)?.avatar_key }));
+        } catch { /* Initials remain available if avatar enrichment is unavailable. */ }
         if (current) setState({ roomId, rows, status: 'ready', error: '' });
       } catch (error) {
         if (current) {
@@ -181,7 +187,7 @@ export default function Leaderboard() {
                   </span>
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border dark:border-[#e7d6c2] bg-surface dark:bg-[#f1e7d7] text-xs font-semibold text-muted dark:text-[#826e50]" aria-hidden="true">
-                      {memberInitials(member.display_name)}
+                      <Avatar name={member.display_name} avatarKey={member.avatar_key} className="text-lg" />
                     </span>
                     <div className="min-w-0">
                       <p className="break-words text-sm font-semibold">{member.display_name}</p>

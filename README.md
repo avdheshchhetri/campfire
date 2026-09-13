@@ -208,3 +208,7 @@ See [AI activation instructions](docs/ai-setup.md) and [Section A handoff](docs/
 ## Gemini challenge generation
 
 Live sessions now offer **Generate with Gemini** using a room syllabus topic. See [Gemini setup and integration](docs/gemini-challenge-setup.md) for the server-only environment variables, new migration, API contracts, and demo steps. The practice puzzle bank remains available; no Claude route is included.
+
+## Code organization and accounts
+
+See [Repository map](docs/repository-structure.md) for folder ownership and [Accounts and avatars](docs/accounts-and-avatars.md) for login, guest upgrades, avatar selection, and the required Supabase setup.

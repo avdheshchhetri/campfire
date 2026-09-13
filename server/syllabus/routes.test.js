@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 
 const mocks = vi.hoisted(() => ({ authorize: vi.fn(), geminiJSON: vi.fn(), adminClient: vi.fn() }));
-vi.mock('../server/teachback.js', async importOriginal => ({ ...(await importOriginal()), ...mocks }));
-import parseSyllabus from '../api/parse-syllabus.js';
-import verifyTeaching from '../api/verify-teaching.js';
+vi.mock('./teachback.js', async importOriginal => ({ ...(await importOriginal()), ...mocks }));
+import parseSyllabus from '../../api/parse-syllabus.js';
+import verifyTeaching from '../../api/verify-teaching.js';
 
 const roomId = '10000000-0000-0000-0000-000000000001';
 const topicId = '20000000-0000-0000-0000-000000000001';

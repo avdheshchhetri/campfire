@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { retryAnalysis } from '../src/features/syllabus/retryAnalysis.js';
+import { retryAnalysis } from '../../src/features/syllabus/retryAnalysis.js';
 afterEach(() => vi.useRealTimers());
 it('recovers from temporary provider errors with bounded retries', async () => {
   vi.useFakeTimers();

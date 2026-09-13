@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
-import { StartSessionButton } from '../campfire/SharedScreen.jsx';
+import { StartSessionButton } from '../features/focus/SharedScreen.jsx';
 import { ArrowRight, BookOpen, CalendarDays, Check, Copy, Flame, Puzzle, Trophy } from 'lucide-react';
 
 export default function RoomDashboard() {

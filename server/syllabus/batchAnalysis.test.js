@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { analyzeBatches } from '../src/features/syllabus/batchAnalysis.js';
+import { analyzeBatches } from '../../src/features/syllabus/batchAnalysis.js';
 afterEach(() => vi.useRealTimers());
 async function* chunks() { for (let i = 0; i < 6; i++) yield i; }
 it('overlaps three requests, caps concurrency, and preserves order despite out-of-order completion', async () => {

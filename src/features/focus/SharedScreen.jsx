@@ -1,3 +1,4 @@
+import Avatar from '../auth/Avatar';
 import { useEffect, useRef, useState } from 'react';
 import { endSession, startSession, watchSession } from './campfireApi.js';
 
@@ -105,7 +106,7 @@ function SessionDisplay({ sessionId, participants = [], canEnd = false, onEnded 
             const focused = connected && byUser.get(person.user_id) === 'down';
             return <li key={person.user_id} className={`flex items-center gap-4 rounded-2xl border p-5 ${focused ? 'border-success dark:border-emerald-700 bg-success-soft dark:bg-emerald-950' : 'border-danger dark:border-red-400 bg-danger-soft dark:bg-red-950'}`}>
               {person.avatar_url ? <img src={person.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
-                : <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-full bg-surface dark:bg-slate-700">{person.name?.slice(0, 1) || '?'}</span>}
+                : <Avatar name={person.name} avatarKey={person.avatar_key} className="grid h-12 w-12 place-items-center rounded-full bg-surface dark:bg-slate-700" />}
               <div><p className={`font-bold ${focused ? 'text-success dark:text-emerald-300' : 'text-danger dark:text-red-300'}`}>{person.name}</p>
                 <p className="text-sm">{focused ? 'Down / focused' : !connected ? 'Offline / waiting' : 'Up / flagged'}</p></div>
             </li>;

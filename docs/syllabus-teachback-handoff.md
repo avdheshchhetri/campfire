@@ -23,7 +23,7 @@ Individual components are also exported:
 <Dashboard roomId={room.id} onTeach={openTopic} onAddSyllabus={openUpload} />
 ```
 
-Copy `src/features/syllabus/`, `api/parse-syllabus.js`, `api/verify-teaching.js`, `server/teachback.js`, and `server/pdf.js` into the host repository. Server helpers sit outside `api/` so they are not deployed as separate endpoints. Keep `@supabase/supabase-js`, `pdf-lib`, React, and Tailwind available. Merge `vercel.json` with the host's configuration. The syllabus screen accepts text and PDF documents, but no new browser client, authentication UI, persistent textbook library, or topic-question generation for group challenges is included.
+Copy `src/features/syllabus/`, `api/parse-syllabus.js`, `api/verify-teaching.js`, `server/syllabus/teachback.js`, and `server/syllabus/pdf.js` into the host repository. Server helpers sit outside `api/` so they are not deployed as separate endpoints. Keep `@supabase/supabase-js`, `pdf-lib`, React, and Tailwind available. Merge `vercel.json` with the host's configuration. The syllabus screen accepts text and PDF documents, but no new browser client, authentication UI, persistent textbook library, or topic-question generation for group challenges is included.
 
 ## Local preview and verification
 
@@ -34,7 +34,7 @@ pnpm run dev:syllabus
 pnpm test
 pnpm run build
 pnpm run build:syllabus-demo
-node --test src/campfire/section-b.test.mjs
+node --test src/features/focus/section-b.test.mjs
 ```
 
 The separate syllabus preview is clearly labeled and uses in-memory Supabase/AI doubles from `demo/syllabus/`. It makes no AI requests and requires no credentials. Its assessment accepts the word `example` to exercise the success state; it does not judge knowledge. Its parser splits pasted text into lines. Selecting a PDF exercises file reading, then displays a clear live-setup requirement instead of pretending to analyze the file. Switching rooms lets you try the Create/Join forms; the seeded room code is `FIRE42`. Reload resets the demo. The demo alias exists only in `vite.syllabus-demo.config.ts` and Vitest, not the production configuration.

@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { useAuth } from '../auth/AuthContext';
-import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { useAuth } from './AuthContext';
+import { isSupabaseConfigured } from '../../lib/supabaseClient';
 
 export default function SignIn() {
   const { signIn, error: authError } = useAuth();
@@ -18,6 +19,7 @@ export default function SignIn() {
   }
   return (
     <form onSubmit={submit} className="space-y-5">
+      <Link className="button button-secondary w-full" to="/account">Log in or create an account</Link>
       <div><label htmlFor="display-name">What should we call you?</label>
         <input id="display-name" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" autoComplete="nickname" required maxLength={60} disabled={busy} />
       </div>

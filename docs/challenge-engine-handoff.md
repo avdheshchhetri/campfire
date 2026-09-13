@@ -16,7 +16,7 @@ Open `/challenge-demo.html` on the development server for the standalone **local
 ## Integrate with the team's app
 
 1. For a fresh database, apply the repository migrations in filename order: `20260912000100_shared_schema.sql`, `20260912000200_access_and_room_functions.sql`, `20260912000300_challenge_engine.sql`, then `20260912000400_challenge_permissions.sql`. Apply each once. The challenge migration retains the original SQL but now follows the host schema and access rules. The final migration removes host column-level UPDATE grants that survive table-level revocation. Existing duplicate active split-puzzle rounds must be resolved before the unique index can be created.
-2. Use `src/features/challenges` in the host app, or copy it into another app without the demo adapter and tests when those are unnecessary. It requires React, `@supabase/supabase-js`, `lucide-react`, and Tailwind 4 through `@tailwindcss/vite`. `src/challenge-demo.css` supplies the standalone demo theme and is loaded only by `/challenge-demo.html`; merge the needed styles with the host's theme when wiring the live component instead of importing its global reset unchanged.
+2. Use `src/features/challenges` in the host app, or copy it into another app without the demo adapter and tests when those are unnecessary. It requires React, `@supabase/supabase-js`, `lucide-react`, and Tailwind 4 through `@tailwindcss/vite`. `src/styles/challenge-demo.css` supplies the standalone demo theme and is loaded only by `/challenge-demo.html`; merge the needed styles with the host's theme when wiring the live component instead of importing its global reset unchanged.
 3. Pass the team's existing authenticated Supabase client and room/session context:
 
 ```tsx

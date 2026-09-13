@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   bodyOf, geminiJSON, nextTeachingTimestamp, readAttempt, signAttempt, validateQuestion, validateTopics, validateVerdict,
 } from './teachback.js';
-import { daysUntilExam, makeJoinCode, newTopicRows } from '../src/features/syllabus/utils.js';
+import { daysUntilExam, makeJoinCode, newTopicRows } from '../../src/features/syllabus/utils.js';
 
 beforeEach(() => { vi.stubEnv('TEACHING_SIGNING_SECRET', 'test-secret-that-is-at-least-32-characters'); vi.stubEnv('GEMINI_API_KEY', 'test-only-key'); vi.stubEnv('GEMINI_MODEL', ''); });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });

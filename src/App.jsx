@@ -1,7 +1,8 @@
 import { BrowserRouter, HashRouter, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from './auth/AuthContext';
-import AppLayout, { RequireRoom } from './components/AppLayout';
+import { AuthProvider } from './features/auth/AuthContext';
+import AppLayout, { RequireRoom } from './components/layout/AppLayout';
 import Landing from './pages/Landing';
+import Account from './pages/Account';
 import RoomDashboard from './pages/RoomDashboard';
 import Session from './pages/Session';
 import NotFound from './pages/NotFound';
@@ -17,6 +18,7 @@ export default function App() {
         <Routes>
           <Route element={<AppLayout />}>
             <Route index element={<Landing />} />
+            <Route path="account" element={<Account />} />
             <Route path="room/:roomId" element={<RequireRoom />}>
               <Route index element={<RoomDashboard />} />
               <Route path="session/:sessionId" element={<Session />} />

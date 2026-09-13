@@ -22,7 +22,15 @@ export function createSupabaseAdapter({ client, roomId, sessionId }: ChallengeEn
   }
   let pending: { key: string; challenge: unknown } | null = null;
   return {
-    async load(): Promise<Snapshot> { return await rpc('cf_snapshot', { p_room: roomId, p_session: sessionId }); },
+    async load(): Promise<Snapshot> {
+      const snapshot: Snapshot = await rpc('cf_snapshot', { p_room: roomId, p_session: sessionId });
+      // Avatar enrichment never blocks the puzzle if profile reads fail.
+      try {
+        const { data, error } = await client.from('profiles').select('*').in('id', snapshot.players.map(player => player.user_id));
+        if (!error) snapshot.players = snapshot.players.map(player => ({ ...player, avatar_key: data?.find(profile => profile.id === player.user_id)?.avatar_key }));
+      } catch { /* The existing initials remain available offline. */ }
+      return snapshot;
+    },
     async start() { await rpc('cf_start', { p_room: roomId, p_session: sessionId }); },
     async startGenerated(input) {
       const body = { roomId, sessionId, ...input };

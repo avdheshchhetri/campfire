@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   listMyRooms: vi.fn(),
 }));
 
-vi.mock('./auth/AuthContext', () => ({
+vi.mock('./features/auth/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => mocks.auth,
 }));
@@ -22,7 +22,7 @@ vi.mock('./lib/supabaseClient', () => ({
   supabase: { from: mocks.from },
 }));
 
-vi.mock('./lib/rooms', () => ({
+vi.mock('./features/rooms/roomsApi', () => ({
   createRoom: mocks.createRoom,
   joinRoom: mocks.joinRoom,
   leaveRoom: mocks.leaveRoom,
@@ -166,7 +166,7 @@ describe('Campfire app integration', () => {
     expect(screen.queryByText('Outside member')).toBeNull();
     const memberRequest = queries.find((query) => query.table === 'room_members');
     expect(memberRequest.filters).toContainEqual(['room_id', room.id]);
-    expect(memberRequest.select).toContain('profiles!room_members_user_id_fkey(display_name)');
+    expect(memberRequest.select).toContain('profiles!room_members_user_id_fkey(*)');
   });
 
   it.each([

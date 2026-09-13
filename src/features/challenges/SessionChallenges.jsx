@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../auth/AuthContext';
 import { supabase } from '../../lib/supabaseClient';
 import { ChallengeEngine } from './ChallengeEngine';
 import './challenges.css';

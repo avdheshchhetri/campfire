@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-export type Player = { user_id: string; display_name: string };
+export type Player = { user_id: string; display_name: string; avatar_key?: string };
 export type Challenge = { id: string; title: string; prompt: string; status: string; attempts: number; created_at: string };
 export type Clue = { id: string; clue_text: string; order_index: number };
 export type Snapshot = { challenge: Challenge | null; clues: Clue[]; players: Player[] };

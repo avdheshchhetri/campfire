@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, BookOpen, DoorOpen, Flame, Plus, Users } from 'lucide-react';
-import { useAuth } from '../auth/AuthContext';
-import { createRoom, joinRoom, listMyRooms } from '../lib/rooms';
-import SignIn from '../components/SignIn';
+import { useAuth } from '../features/auth/AuthContext';
+import { createRoom, joinRoom, listMyRooms } from '../features/rooms/roomsApi';
+import SignIn from '../features/auth/SignIn';
 
 export default function Landing() {
   const { profile, user } = useAuth();

@@ -1,8 +1,8 @@
 import { StrictMode, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ChallengePanel } from './features/challenges/ChallengeEngine';
-import { createDemoAdapter, demoPlayers } from './features/challenges/demoAdapter';
-import './challenge-demo.css';
+import { ChallengePanel } from '../../src/features/challenges/ChallengeEngine';
+import { createDemoAdapter, demoPlayers } from '../../src/features/challenges/demoAdapter';
+import '../../src/styles/challenge-demo.css';
 function Demo() {
   const [player, setPlayer] = useState(0);
   const current = useRef(player); current.current = player;

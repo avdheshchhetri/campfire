@@ -5,11 +5,11 @@ The default is dark. The `theme-preference` localStorage key stores `dark` or `l
 ## Implementation files
 
 - `tailwind.config.js`: `darkMode: 'class'`, Fraunces display / IBM Plex Sans body font families, and named light palette utilities.
-- `src/theme.css`: the light palette is defined once at the top (`--light-page`, `--light-surface`, `--light-accent`, etc.). Legacy paint aliases map to these roles in light mode. The `.dark` block preserves every original CSS paint value, including alpha values used in shadows and gradients.
+- `src/styles/theme.css`: the light palette is defined once at the top (`--light-page`, `--light-surface`, `--light-accent`, etc.). Legacy paint aliases map to these roles in light mode. The `.dark` block preserves every original CSS paint value, including alpha values used in shadows and gradients.
 - `index.html`: Google Fonts links and the early inline initialization script. The same bootstrap/fonts are included in `challenge-demo.html` and `syllabus-demo.html`.
-- `src/components/ThemeToggle.jsx`: keyboard-accessible sun/moon toggle, pressed state, persistence, and cross-tab synchronization.
-- `src/components/AppLayout.jsx`: mounts the toggle in the shared header.
-- `src/styles.css`, `src/challenge-demo.css`, `src/features/challenges/challenges.css`: existing custom styles use theme paint aliases, and display text uses Fraunces. Font sizes, weights, spacing, and breakpoints are retained; the landing accent word is italic.
+- `src/components/theme/ThemeToggle.jsx`: keyboard-accessible sun/moon toggle, pressed state, persistence, and cross-tab synchronization.
+- `src/components/layout/AppLayout.jsx`: mounts the toggle in the shared header.
+- `src/styles/app.css`, `src/styles/challenge-demo.css`, `src/features/challenges/challenges.css`: existing custom styles use theme paint aliases, and display text uses Fraunces. Font sizes, weights, spacing, and breakpoints are retained; the landing accent word is italic.
 
 This repository uses Tailwind v4. Both CSS entries explicitly load `tailwind.config.js` using `@config`, and use `@custom-variant dark (&:where(.dark, .dark *))`. Adding a JavaScript config alone would not wire it into this app.
 
@@ -36,12 +36,12 @@ No backend, credentials, API contracts, or database schema changed. The GitHub P
 
 ## Repository organization
 
-- Shared palette and font tokens: `src/theme.css`; Tailwind integration: `tailwind.config.js`.
+- Shared palette and font tokens: `src/styles/theme.css`; Tailwind integration: `tailwind.config.js`.
 - Shared navigation and controls: `src/components/`. Theme behavior tests live beside the toggle.
 - Room and navigation pages: `src/pages/`.
 - Phone presence and shared focus timer: `src/campfire/`.
 - Challenges, syllabus, and leaderboard retain their respective `src/features/` folders.
 - `api/`, `server/`, and `supabase/` remain separate and unchanged by the theme work.
-- Typography declarations stay with the component styles they affect; the global heading family is defined once in `src/theme.css`.
+- Typography declarations stay with the component styles they affect; the global heading family is defined once in `src/styles/theme.css`.
 
 Integrated on top of the latest GitHub main commit `edd4371`; no feature branches were merged into main as part of this UI update.

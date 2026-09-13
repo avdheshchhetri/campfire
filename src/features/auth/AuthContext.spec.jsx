@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   readProfile: vi.fn(),
 }));
 
-vi.mock('../lib/supabaseClient', () => ({
+vi.mock('../../lib/supabaseClient', () => ({
   isSupabaseConfigured: true,
   supabase: {
     auth: {

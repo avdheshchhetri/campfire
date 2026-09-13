@@ -1,10 +1,10 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ challengeContext: vi.fn(), generateGeminiChallenge: vi.fn(), adminClient: vi.fn() }));
 vi.mock('./challengeGeneration.js', async original => ({ ...(await original()), challengeContext: mocks.challengeContext, generateGeminiChallenge: mocks.generateGeminiChallenge }));
-vi.mock('./teachback.js', async original => ({ ...(await original()), adminClient: mocks.adminClient }));
-import generate from '../api/generate-challenge-gemini.js';
-import save from '../api/save-challenge.js';
-import { ApiError } from './teachback.js';
+vi.mock('../syllabus/teachback.js', async original => ({ ...(await original()), adminClient: mocks.adminClient }));
+import generate from '../../api/generate-challenge-gemini.js';
+import save from '../../api/save-challenge.js';
+import { ApiError } from '../syllabus/teachback.js';
 const puzzle = { full_answer: '42', clues: [{ clue_text: 'A', order_index: 0 }, { clue_text: 'B', order_index: 1 }] };
 const context = { roomId: 'r', sessionId: 's', topicId: 't', user: { id: 'u' } };
 let rpc;

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "./theme.css";
-@config "../tailwind.config.js";
+@config "../../tailwind.config.js";
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -160,3 +160,5 @@ textarea { font-family: inherit; }
 .theme-toggle { flex-shrink: 0; }
 .welcome-copy h1 em { font-style: italic; }
 :root:not(.dark) .app-shell progress { accent-color: var(--light-success); }
+
+.avatar-options [aria-pressed="true"] { border-color: var(--paint-accent-a6f470); outline: 2px solid var(--paint-accent-a6f470); outline-offset: 2px; }

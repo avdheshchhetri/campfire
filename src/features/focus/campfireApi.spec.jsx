@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ from: vi.fn() }));
-vi.mock('../supabaseClient.js', () => ({ supabase: { from: mocks.from } }));
+vi.mock('../../supabaseClient.js', () => ({ supabase: { from: mocks.from } }));
 import { writeState } from './campfireApi.js';
 let writes;
 let active;

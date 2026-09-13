@@ -1,11 +1,12 @@
+import Avatar from '../../features/auth/Avatar';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useMatch, useNavigate, useOutletContext } from 'react-router-dom';
 import { ArrowLeft, Flame, LayoutDashboard, LogOut, Trophy } from 'lucide-react';
-import { useAuth } from '../auth/AuthContext';
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
-import { leaveRoom } from '../lib/rooms';
-import SignIn from './SignIn';
-import ThemeToggle from './ThemeToggle';
+import { useAuth } from '../../features/auth/AuthContext';
+import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
+import { leaveRoom } from '../../features/rooms/roomsApi';
+import SignIn from '../../features/auth/SignIn';
+import ThemeToggle from '../theme/ThemeToggle';
 
 export default function AppLayout() {
   const { profile, user, loading, error: authError, retryProfile } = useAuth();
@@ -61,7 +62,7 @@ export default function AppLayout() {
         <Link to="/" className="brand" aria-label="Campfire home"><span className="brand-icon"><Flame size={25} strokeWidth={1.7} /></span>campfire<span className="brand-period">.</span></Link>
         <span className="header-note">A little focus. A little company.</span>
         <ThemeToggle />
-        {profile ? <div className="user-chip"><span className="avatar small">{profile.display_name.slice(0, 1).toUpperCase()}</span><span>{profile.display_name}</span></div> : <span className="text-sm muted">Study better, together</span>}
+        {profile ? <Link to="/account" className="user-chip" aria-label="Open your account"><Avatar name={profile.display_name} avatarKey={user?.user_metadata?.avatar_key || profile.avatar_key} /><span>{profile.display_name}</span></Link> : <span className="text-sm muted">Study better, together</span>}
       </header>
 
       {!isSupabaseConfigured && <div className="setup-banner" role="status"><strong>Connect your study space.</strong> Add your Supabase URL and public key to <code>.env.local</code> to enable sign-in and rooms. See README for setup.</div>}

@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { localApi } from './server/localApi.js';
+import { localApi } from './server/dev/localApi.js';
 import { readFileSync } from 'node:fs';
 
 const pages = process.env.VITE_GITHUB_PAGES === 'true';
