@@ -167,3 +167,22 @@ textarea { font-family: inherit; }
 .dark .app-shell .learning-topic[data-topic-status="untouched"] { background: var(--learning-untouched-surface); color: var(--learning-untouched-text); border-color: var(--learning-untouched-border); }
 .dark .app-shell .learning-topic[data-topic-status="taught"], .dark .app-shell [data-exam-notice] { background: var(--learning-taught-surface); color: var(--learning-taught-text); border-color: var(--learning-taught-border); }
 .dark .app-shell .learning-topic[data-topic-status="verified"] { background: var(--learning-verified-surface); color: var(--learning-verified-text); border-color: var(--learning-verified-border); }
+
+/* Question first; hint ownership remains visible while its contents are collapsed. */
+.cf-question-front { margin: 20px 0 26px; padding: 24px; border: 1px solid var(--light-border); border-radius: 20px; background: var(--light-surface); color: var(--light-primary); }
+.cf-question-text { font-size: 1.35rem; line-height: 1.6; font-weight: 600; margin: 14px 0; white-space: pre-wrap; }
+.cf-question-front > p:not(.cf-question-text) { font-size: .95rem; line-height: 1.6; }
+.cf-assistance { margin-top: 16px; padding: 16px; border: 1px solid var(--light-warning); border-radius: 12px; background: var(--light-warning-soft); color: #78350f; }
+.cf-hints { display: grid; gap: 16px; }
+.cf-hint-owner { display: flex; align-items: center; gap: 12px; }
+.cf-hint-avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; }
+.cf-hint-content { white-space: pre-wrap; line-height: 1.7; }
+.dark .cf-question-front { background: #17232c; border-color: #344650; color: #edf4f7; }
+.dark .cf-assistance { background: #302619; border-color: #775d32; color: #fcd590; }
+html:not(.dark) .cf-shell :is(.cf-round,.cf-stage-footer,.cf-person small,.cf-note,.cf-footer,.cf-connection,.cf-section-label,.cf-empty small,.cf-clue-card-heading,.cf-listening,.cf-help,.cf-feedback,.cf-generator small) { color: var(--light-muted); opacity: 1; }
+html:not(.dark) .cf-shell :is(.cf-text-button,.cf-hint-owner,.cf-prompt) { color: var(--light-primary); }
+html:not(.dark) .cf-shell input::placeholder { color: var(--light-muted); opacity: 1; }
+.cf-shell :is(.cf-section-label,.cf-round,.cf-clue-card-heading,.cf-stage-footer,.cf-person small,.cf-footer,.cf-connection,.cf-generator small) { font-size: .75rem; }
+.cf-shell :is(.cf-hints .cf-text-button,.cf-note,.cf-listening p) { font-size: .875rem; line-height: 1.6; }
+.cf-shell .cf-section-label { flex-wrap: wrap; gap: .5rem; }
+.cf-shell .cf-section-label span { font-size: .75rem; letter-spacing: .04em; }

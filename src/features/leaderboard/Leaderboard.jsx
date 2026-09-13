@@ -201,7 +201,7 @@ export default function Leaderboard() {
                     </span>
                     <div className="min-w-0">
                       <p className="break-words text-sm font-semibold">{member.display_name}</p>
-                      <p className="mt-1 text-xs text-muted dark:text-[#968b7b]">{member.solved_count === undefined ? 'Growing together' : `${member.verified_count} topics verified · ${member.solved_count} puzzles solved`}</p>
+                      <p className="mt-1 text-xs text-muted dark:text-[#968b7b]">{member.solved_count === undefined ? 'Growing together' : `${member.verified_count} topics verified · ${member.solved_count} puzzles solved · ${member.score} points${member.penalty_points ? ` (−${member.penalty_points} hint penalty)` : ""}`}</p>
                     </div>
                   </div>
                   <div className="col-start-2 row-start-2 sm:col-start-auto sm:row-start-auto">

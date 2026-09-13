@@ -9,9 +9,9 @@ export function useWakeLock(active) {
     let disposed = false, pending = false, lock = null;
     async function acquire() {
       if (disposed || pending || lock || document.hidden) return;
-      if (!navigator.wakeLock?.request) { setStatus('unsupported'); return; }
       pending = true;
       try {
+        if (!navigator.wakeLock?.request) { setStatus('unsupported'); return; }
         const acquired = await navigator.wakeLock.request('screen');
         if (disposed || document.hidden) { await acquired.release(); return; }
         lock = acquired;

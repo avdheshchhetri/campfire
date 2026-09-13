@@ -42,3 +42,13 @@ test('initials handle names with surrounding or repeated whitespace', () => {
   assert.equal(memberInitials('  Alex   Rivera '), 'AR');
   assert.equal(memberInitials(''), '?');
 });
+
+test('deducts hint penalties from points without changing verified-topic progress', () => {
+  const rows=prepareLeaderboard([
+    {user_id:'a',display_name:'Alex',total_topics:2,verified_count:1,solved_count:1,penalty_points:1},
+    {user_id:'b',display_name:'Sam',total_topics:2,verified_count:1,solved_count:1,penalty_points:0},
+  ]);
+  assert.equal(rows[0].user_id,'b');
+  assert.equal(rows[1].score,1);
+  assert.equal(rows[1].progress,50);
+});

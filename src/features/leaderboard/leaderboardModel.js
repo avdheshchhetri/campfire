@@ -17,7 +17,7 @@ export function prepareLeaderboard(rows, sort = 'progress') {
       ...row,
       total_topics: totalTopics,
       verified_count: verifiedCount,
-      score: verifiedCount + count(row.solved_count),
+      score: verifiedCount + count(row.solved_count) - count(row.penalty_points),
       progress: totalTopics > 0 ? Math.min(100, (verifiedCount / totalTopics) * 100) : 0,
     };
   }).sort((left, right) => right.score - left.score || byName(left, right));

@@ -1,0 +1,28 @@
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+import PhonePresencePage from './PhonePresencePage';
+const mocks=vi.hoisted(()=>({set:vi.fn(),watch:vi.fn(),auth:vi.fn()}));
+vi.mock('../../supabaseClient.js',()=>({supabase:{auth:{onAuthStateChange:mocks.auth}}}));
+vi.mock('./campfireApi.js',()=>({currentUserId:vi.fn(),writeState:vi.fn(),watchSession:mocks.watch}));
+vi.mock('./useWakeLock.js',()=>({useWakeLock:()=>({status:'unsupported',retry:vi.fn()})}));
+vi.mock('./orientation.js',async original=>({...await original(),createStateWriter:()=>({set:mocks.set,stop:vi.fn()})}));
+afterEach(()=>{cleanup();vi.restoreAllMocks();vi.clearAllMocks();});
+it('uses the signed-in identity and retains down through sleep until an up reading arrives',async()=>{
+  let callbacks;mocks.watch.mockImplementation((id,next)=>{callbacks=next;return ()=>{};});
+  const hidden=vi.spyOn(document,'hidden','get').mockReturnValue(false);
+  vi.stubGlobal('isSecureContext',true);vi.stubGlobal('DeviceOrientationEvent',class {});
+  render(<PhonePresencePage sessionId="session" userId="user" />);
+  expect(mocks.auth).not.toHaveBeenCalled();
+  act(()=>callbacks.onSnapshot({is_active:true},[{user_id:'user',state:'down'}]));
+  expect(mocks.set).toHaveBeenLastCalledWith('down');
+  await act(async()=>fireEvent.click(screen.getByRole('button',{name:'Enable Motion Detection'})));
+  act(()=>{hidden.mockReturnValue(true);document.dispatchEvent(new Event('visibilitychange'));});
+  expect(mocks.set).toHaveBeenLastCalledWith('down');
+  act(()=>{hidden.mockReturnValue(false);document.dispatchEvent(new Event('visibilitychange'));});
+  expect(mocks.set).toHaveBeenLastCalledWith('down');
+  act(()=>{const event=new Event('deviceorientation');Object.assign(event,{beta:180,gamma:0});window.dispatchEvent(event);});
+  expect(mocks.set).toHaveBeenLastCalledWith('down');
+  act(()=>{const event=new Event('deviceorientation');Object.assign(event,{beta:0,gamma:0});window.dispatchEvent(event);});
+  expect(mocks.set).toHaveBeenLastCalledWith('up');
+  vi.unstubAllGlobals();
+});

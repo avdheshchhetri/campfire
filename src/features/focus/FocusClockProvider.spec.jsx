@@ -24,3 +24,16 @@ it('keeps monitoring between views, pauses when a phone flips, and restores the 
   act(() => { now=9000; vi.advanceTimersByTime(250); });
   expect(screen.getByRole('status').textContent).toBe('5000');
 });
+
+it('continues with last-known down when a phone sleeps, then pauses on the next up reading',()=>{
+  vi.useFakeTimers();let now=0;vi.spyOn(performance,'now').mockImplementation(()=>now);
+  let callbacks;mocks.watch.mockImplementation((id,next)=>{callbacks=next;return mocks.stop;});
+  render(<FocusClockProvider><Clock /></FocusClockProvider>);
+  act(()=>{callbacks.onSnapshot({is_active:true},[{user_id:'one',state:'down'}]);callbacks.onStatus('ready');});
+  act(()=>{now=3000;callbacks.onOnline(new Set());vi.advanceTimersByTime(250);});
+  expect(screen.getByRole('status').textContent).toBe('3000');
+  act(()=>{now=5000;callbacks.onSnapshot({is_active:true},[{user_id:'one',state:'down'}]);});
+  expect(screen.getByRole('status').textContent).toBe('5000');
+  act(()=>{now=6000;callbacks.onSnapshot({is_active:true},[{user_id:'one',state:'up'}]);now=9000;vi.advanceTimersByTime(250);});
+  expect(screen.getByRole('status').textContent).toBe('6000');
+});

@@ -28,3 +28,13 @@ it('accepts different history questions on the same topic and rejects duplicates
   questions[1]=questions[0];
   expect(()=>validateSubjectQuestions({questions})).toThrow();
 });
+
+it('rejects different questions that resolve to the same answer', async () => {
+  const maths=payload(); maths.variants[1].full_answer=maths.variants[0].full_answer;
+  expect(()=>validateVariants(maths,'Maths')).toThrow();
+  maths.variants[1].full_answer='2.0';
+  expect(()=>validateVariants(maths,'Maths')).toThrow();
+  const {validateSubjectQuestions}=await import('./questionVariants.js');
+  const questions=Array.from({length:6},(_,i)=>({question:`Question ${i}`,hint:`Hint ${i}`,full_answer:'Same person'}));
+  expect(()=>validateSubjectQuestions({questions})).toThrow();
+});

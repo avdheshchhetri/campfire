@@ -32,8 +32,8 @@ New **Generate with Gemini** rounds support 1–6 participants and use a syllabu
 
 - **Maths:** everyone gets the same question format with different numbers. For example, one person solves `3x + 5 = 26`, while another solves `4x + 7 = 35`.
 - **Other subjects:** everyone gets a different question within the same topic, at comparable difficulty. Historical-figure questions might ask about the first US president and the president who issued the Emancipation Proclamation in 1863.
-- Each person sees their own question. Its hint goes to the next teammate in the round’s fixed roster, labeled **“Hint for [name]”**, with that question’s context.
-- Each person submits their own answer. The round completes only after every assigned participant answers correctly.
+- The question appears directly under the topic. Teammate hints start collapsed and require a reveal click; the owner’s name/avatar stays visible. Each person sees their own question. Its hint goes to the next teammate in the round’s fixed roster, labeled **“Hint for [name]”**, with that question’s context.
+- Each person submits their own answer, and answers are required to differ across participants. The next quiz stays locked until every assigned participant answers correctly. After eight incorrect attempts, that user’s own hint is automatically shown and one point is deducted once for that question; this does not mark the answer correct.
 - Answers are saved in a private database table and checked server-side. The individual-generation response returns only the round ID.
 - Solo rounds show the player their own hint. Join before a round starts to receive an assignment; late joiners participate in the next round.
 
@@ -43,9 +43,9 @@ Existing rounds and the practice puzzle bank retain their shared-answer behavior
 
 Each participant opens the phone view, taps **Enable Motion Detection**, and places their phone face-down. Orientation readings update their `up`/`down` state at most once every two seconds. **Simulate Face-Down** provides a manual override when sensors are unavailable or unreliable.
 
-The shared screen shows the room roster and runs the timer only while everyone is connected and down. Accumulated time survives navigation between app views in the same browser. Ending a session sets `ended_at` and `is_active: false`.
+The shared screen shows the room roster and runs the timer while everyone’s last saved state is down. A sleeping or disconnected phone retains its last state until a new reading arrives. Accumulated time survives navigation between app views in the same browser. Ending a session sets `ended_at` and `is_active: false`.
 
-**Device limits:** motion detection needs HTTPS on real phones and may require explicit permission. The phone page requests a screen wake lock to prevent automatic sleep while supported and permitted. Manually locking the phone, switching apps, battery-saving settings, or browser suspension can stop detection; a website cannot guarantee background motion tracking. Return to the phone page to reconnect. The timer is accumulated per browser, not a server-authoritative clock synchronized across independent shared screens. Reload restores saved time but does not credit the unobserved gap.
+**Device limits:** motion detection needs HTTPS on real phones and may require explicit permission. The phone page requests a screen wake lock to prevent automatic sleep while supported and permitted. Manually locking the phone, switching apps, battery-saving settings, or browser suspension can stop detection; a website cannot guarantee background motion tracking. Campfire intentionally assumes the last position is unchanged during that gap, including a lost connection. The display labels offline down states as assumed focus. A fresh up reading pauses the timer; a fresh down reading keeps it running. End the session when finished. The timer is accumulated per browser, not a server-authoritative clock synchronized across independent shared screens. Reload restores saved time but does not credit the unobserved gap.
 
 ## Run locally
 
@@ -124,6 +124,7 @@ The SQL files in [`supabase/migrations/`](supabase/migrations/) are the database
 | 8 | [20260913000200_session_challenge_fixes.sql](supabase/migrations/20260913000200_session_challenge_fixes.sql) | Solo/pair rounds and member progress scoring |
 | 9 | [20260913000300_cross_teammate_hints.sql](supabase/migrations/20260913000300_cross_teammate_hints.sql) | Named hints passed to teammates |
 | 10 | [20260913000400_individual_questions.sql](supabase/migrations/20260913000400_individual_questions.sql) | Individual questions, private answers, and per-person completion |
+| 11 | [20260913000500_quiz_assistance.sql](supabase/migrations/20260913000500_quiz_assistance.sql) | Distinct answers, eight-attempt hint assistance, point penalties, and next-quiz gating |
 
 **SQL Editor:** on an empty project, open each file, copy its full contents into **SQL Editor → New query → Run**, and proceed in the order above. On an existing project, apply only missing migrations after verifying what was already run. Do not rerun the original schema over existing tables.
 
@@ -157,7 +158,7 @@ Core access rules:
 - Scanned pages must be readable; password-protected PDFs are unsupported. Large books use multiple Gemini requests and take longer.
 - Review extracted topics before saving them. The app stores the topics you choose, rather than storing the original uploaded PDF in a file bucket.
 - Teach-back requires an explanation and a follow-up answer. An explanation alone does not verify a topic. Drafts are retained temporarily in the current browser tab.
-- Personal teaching credit follows verified topics attributed through `last_taught_by`. Completed group rounds contribute challenge wins to their original participants. Ranking combines these counts; percentage progress measures verified topics.
+- Personal teaching credit follows verified topics attributed through `last_taught_by`. Completed group rounds contribute challenge wins to their original participants. Ranking combines these counts minus hint penalties; percentage progress measures verified topics.
 - Without the member-progress migration, the UI may fall back to the original shared-room leaderboard values. Correct personal scoring requires all migrations.
 
 ## Deployment
@@ -259,7 +260,7 @@ Suggested end-to-end check: sign in with two accounts, join the same room/sessio
 | Gemini button is disabled | Select a saved syllabus topic, join the session, and keep its roster within 1–6 participants |
 | AI needs a server / API unavailable | Use configured local development or full API hosting; Pages alone cannot run Gemini |
 | Gemini quota, unavailable-model, or temporary errors | Check server credentials, supported model IDs, and API quota; retry transient failures |
-| Individual questions cannot save | Apply migration 10 and its predecessors, then start a new round |
+| Individual questions cannot save | Apply migrations 10–11 and their predecessors, then start a new round |
 | Everyone has equal or stale leaderboard values | Apply migration 8; verify that topics/rounds have actually completed |
 | Avatars do not appear for peers | Apply migration 7 and verify profile read access |
 | No phone readings / focus pauses on lock | Use HTTPS, grant motion permission, keep the phone page visible, and check keep-awake status; simulation is available |

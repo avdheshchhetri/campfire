@@ -38,7 +38,7 @@ function SessionDisplay({ sessionId, participants = [], canEnd = false, onEnded 
 
   const byUser = new Map(rows.map(row => [row.user_id, row.state]));
   const roster = [...new Map(participants.map(person => [person.user_id, person])).values()];
-  const blockers = roster.filter(person => !online.has(person.user_id) || byUser.get(person.user_id) !== 'down');
+  const blockers = roster.filter(person => byUser.get(person.user_id) !== 'down');
   const running = Boolean(session?.is_active && status === 'ready'
     && !ending && roster.length > 0 && blockers.length === 0);
 
@@ -62,6 +62,7 @@ function SessionDisplay({ sessionId, participants = [], canEnd = false, onEnded 
   return (
     <main className="min-h-screen bg-page dark:bg-slate-950 p-6 text-primary dark:text-slate-100 md:p-12">
       <div className="mx-auto max-w-5xl space-y-8">
+        <p className="text-sm text-muted dark:text-slate-300">Sleeping phones keep their last position. Offline does not confirm face-down; the timer stops when a new up reading arrives. End the session when finished.</p>
         <header><p className="font-semibold text-accent dark:text-orange-300">CAMPFIRE MODE</p>
           <h1 className="font-display mt-2 text-3xl font-bold">Group focus session</h1></header>
         <section className={`rounded-3xl border p-8 text-center ${running ? 'border-success dark:border-emerald-500 bg-success-soft dark:bg-emerald-950' : 'border-accent dark:border-orange-400 bg-surface dark:bg-slate-900'}`}>
@@ -74,12 +75,12 @@ function SessionDisplay({ sessionId, participants = [], canEnd = false, onEnded 
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {roster.map(person => {
             const connected = online.has(person.user_id);
-            const focused = connected && byUser.get(person.user_id) === 'down';
+            const focused = byUser.get(person.user_id) === 'down';
             return <li key={person.user_id} className={`flex items-center gap-4 rounded-2xl border p-5 ${focused ? 'border-success dark:border-emerald-700 bg-success-soft dark:bg-emerald-950' : 'border-danger dark:border-red-400 bg-danger-soft dark:bg-red-950'}`}>
               {person.avatar_url ? <img src={person.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
                 : <Avatar name={person.name} avatarKey={person.avatar_key} className="grid h-12 w-12 place-items-center rounded-full bg-surface dark:bg-slate-700" />}
               <div><p className={`font-bold ${focused ? 'text-success dark:text-emerald-300' : 'text-danger dark:text-red-300'}`}>{person.name}</p>
-                <p className="text-sm">{focused ? 'Down / focused' : !connected ? 'Offline / waiting' : 'Up / flagged'}</p></div>
+                <p className="text-sm">{focused ? (connected ? 'Down / focused' : 'Last known down / assumed focused') : !connected ? 'Offline / waiting' : 'Up / flagged'}</p></div>
             </li>;
           })}
         </ul>

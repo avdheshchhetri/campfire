@@ -186,3 +186,34 @@ it('assigns different individual questions, swaps named hints, and requires ever
   expect(await submit('3')).toBe(true);
   expect((await snapshot()).challenge).toMatchObject({status:'solved',own_solved:true,solved_count:2});
 });
+
+it('keeps each answer private, blocks skipping, and unlocks only the caller hint after eight failures once', async () => {
+  await db.exec('reset role; set role service_role');
+  const questions=Array.from({length:6},(_,i)=>({question:`Compute ${i+10} + 2`,full_answer:String(i+12),hint:`Count two beyond ${i+10}.`}));
+  const args=[room,session,ids[0],'30000000-0000-0000-0000-000000000001',JSON.stringify(questions)];
+  const startRound=()=>db.query<{id:string}>('select cf_save_individual($1,$2,$3,$4,$5::jsonb) id',args);
+  const id=(await startRound()).rows[0].id;
+  expect((await startRound()).rows[0].id).toBe(id);
+  await asUser(ids[0]);
+  expect((await snapshot()).clues[0].hint_for_id).toBe(ids[1]);
+  for(let i=0;i<7;i++) expect(await submit('wrong')).toBe(false);
+  expect((await snapshot()).challenge.assistance_hint).toBeNull();
+  expect(await submit('wrong')).toBe(false);
+  expect((await snapshot()).challenge).toMatchObject({failed_attempts:8,penalty_points:1,assistance_hint:questions[0].hint,own_solved:false});
+  await submit('wrong');
+  expect((await snapshot()).challenge.penalty_points).toBe(1);
+  await expect(db.query('select cf_cancel($1,$2)',[room,session])).rejects.toThrow('Everyone must solve');
+  const progress=(await db.query<{user_id:string,penalty_points:bigint}>('select * from cf_progress($1)',[room])).rows;
+  expect(Number(progress.find(p=>p.user_id===ids[0])!.penalty_points)).toBe(1);
+  await asUser(ids[1]);
+  expect((await snapshot()).challenge).toMatchObject({own_solved:false,failed_attempts:0,penalty_points:0,assistance_hint:null});
+  expect(await submit(questions[0].full_answer)).toBe(false);
+  expect(await submit(questions[1].full_answer)).toBe(true);
+  expect((await snapshot()).challenge.status).toBe('active');
+  await asUser(ids[0]); expect((await snapshot()).challenge.own_solved).toBe(false);
+  expect(await submit(questions[0].full_answer)).toBe(true);
+  expect((await snapshot()).challenge.status).toBe('solved');
+  await db.exec('reset role; set role service_role');
+  const duplicate=questions.map(q=>({...q,full_answer:'same'}));
+  await expect(db.query('select cf_save_individual($1,$2,$3,$4,$5::jsonb)',[...args.slice(0,4),JSON.stringify(duplicate)])).rejects.toThrow('different answer');
+});

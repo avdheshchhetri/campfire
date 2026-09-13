@@ -21,7 +21,7 @@ export function FocusClockProvider({ children }) {
     const emit = () => { state = { ...state, elapsed: clock.elapsed() }; listeners.forEach(fn => fn(state)); };
     function reconcile() {
       const down = new Set(state.rows.filter(row => row.state === 'down').map(row => row.user_id));
-      clock.setRunning(Boolean(state.session?.is_active && state.status === 'ready' && roster.length && roster.every(id => state.online.has(id) && down.has(id))));
+      clock.setRunning(Boolean(state.session?.is_active && state.status === 'ready' && roster.length && roster.every(id => down.has(id))));
       emit();
     }
     const stopWatch = watchSession(sessionId, {

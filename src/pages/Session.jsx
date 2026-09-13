@@ -3,10 +3,13 @@ import { Link, useOutletContext, useParams, useHref } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import SessionChallenges from '../features/challenges/SessionChallenges.jsx';
 import PhonePresencePage from '../features/focus/PhonePresencePage.jsx';
+import FeatureBoundary from '../components/layout/FeatureBoundary.jsx';
+import { useAuth } from '../features/auth/AuthContext';
 import SharedScreen from '../features/focus/SharedScreen.jsx';
 
 export default function Session({ view = 'overview' }) {
   const { roomId, sessionId } = useParams();
+  const { user } = useAuth();
   const { refreshRoom } = useOutletContext();
   const [state, setState] = useState({ loading: true });
   const [revision, setRevision] = useState(0);
@@ -46,9 +49,9 @@ export default function Session({ view = 'overview' }) {
       <Link className="button button-secondary" to={`${base}/shared`}>Shared focus screen</Link>
       <Link className="button button-secondary" to={base}>Group challenges</Link>
     </nav>
-    {view === 'phone' ? <PhonePresencePage key={sessionId} sessionId={sessionId} />
+    <FeatureBoundary key={`${sessionId}:${view}`} >{view === 'phone' ? <PhonePresencePage key={sessionId} sessionId={sessionId} userId={user?.id} />
       : view === 'shared' ? <FocusDisplay key={sessionId} roomId={roomId} sessionId={sessionId} phonePath={`${base}/phone`} onEnded={() => { refreshRoom(); setRevision(value => value + 1); }} />
-      : <><p className="muted mb-6">For phone-free focus, each teammate opens “Use this phone.” Keep “Shared focus screen” open on a separate laptop or tablet.</p><SessionChallenges key={sessionId} sessionId={sessionId} /></>}
+      : <><p className="muted mb-6">For phone-free focus, each teammate opens “Use this phone.” Keep “Shared focus screen” open on a separate laptop or tablet.</p><SessionChallenges key={sessionId} sessionId={sessionId} /></>}</FeatureBoundary>
   </>;
 }
 
@@ -83,7 +86,7 @@ function FocusDisplay({ roomId, sessionId, phonePath, onEnded }) {
   return <>
     <section className="panel p-5 mb-5"><p>Everyone in this room is included in the focus timer. Each member must open the phone page, sign in and enable detection.</p>
       <p className="mt-3 break-all">Phone page: <a className="underline" href={phoneHref}>{phoneUrl}</a></p>
-      <p className="muted text-sm mt-2">On a real phone, use the deployed HTTPS address. This localhost link opens only on this computer. Focus time resets when this display reloads.</p>
+      <p className="muted text-sm mt-2">On a real phone, use the deployed HTTPS address. This localhost link opens only on this computer. Saved focus time survives navigation; sleeping phones retain their last position.</p>
     </section>
     {error && <p className="error-banner mb-4" role="alert">Couldn’t load the group: {error}</p>}
     <SharedScreen sessionId={sessionId} participants={participants} canEnd onEnded={onEnded} />

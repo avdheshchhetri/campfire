@@ -4,10 +4,11 @@ import { currentUserId, watchSession, writeState } from './campfireApi.js';
 import { createStateWriter, orientationState } from './orientation.js';
 import { useWakeLock } from './useWakeLock.js';
 
-export default function PhonePresencePage({ sessionId }) {
+export default function PhonePresencePage({ sessionId, userId: authenticatedUserId }) {
   const [userId, setUserId] = useState(null);
   const [error, setError] = useState('');
   useEffect(() => {
+    if (authenticatedUserId) return;
     let disposed = false, generation = 0;
     async function check() {
       const revision = ++generation;
@@ -24,7 +25,8 @@ export default function PhonePresencePage({ sessionId }) {
       queueMicrotask(() => { if (!disposed) void check(); });
     });
     return () => { disposed = true; data.subscription.unsubscribe(); };
-  }, []);
+  }, [authenticatedUserId]);
+  if (authenticatedUserId) return <PhoneSession key={`${sessionId}:${authenticatedUserId}`} sessionId={sessionId} userId={authenticatedUserId} />;
   if (!sessionId) return <p role="alert">A session ID is required.</p>;
   if (!userId) return <p role="status" className="p-6">{error || 'Checking sign-in…'}</p>;
   return <PhoneSession key={`${sessionId}:${userId}`} sessionId={sessionId} userId={userId} />;
@@ -45,12 +47,16 @@ function PhoneSession({ sessionId, userId }) {
   const wakeLock = useWakeLock(active === true);
   const writer = useRef(null);
   const mounted = useRef(false);
-  const effective = visible && (simulate || sensor === 'down') ? 'down' : 'up';
+  const observed = useRef(false);
+  const effective = simulate || sensor === 'down' ? 'down' : 'up';
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => watchSession(sessionId, {
     userId,
-    onSnapshot: session => setActive(session.is_active),
+    onSnapshot: (session, rows) => {
+      if (!observed.current) setSensor(rows.find(row => row.user_id === userId)?.state === 'down' ? 'down' : 'up');
+      setActive(session.is_active);
+    },
     onOnline: () => {},
     onStatus: (status, message = '') => { setConnection(status); setConnectionError(message); },
   }), [sessionId, userId]);
@@ -74,7 +80,7 @@ function PhoneSession({ sessionId, userId }) {
   }, [active, effective]);
 
   useEffect(() => {
-    const change = () => { setVisible(!document.hidden); setSensor('up'); };
+    const change = () => { setVisible(!document.hidden); }; // Retain the last reading across sleep.
     document.addEventListener('visibilitychange', change);
     return () => document.removeEventListener('visibilitychange', change);
   }, []);
@@ -86,7 +92,8 @@ function PhoneSession({ sessionId, userId }) {
       if (document.hidden) return;
       if (!Number.isFinite(event.beta) || !Number.isFinite(event.gamma)) return;
       received = true;
-      setHint('Motion detection enabled. Keep this page open and the screen unlocked.');
+      observed.current = true;
+      setHint('Motion detection enabled. Your last face-down reading is retained during sleep.');
       setSensor(previous => orientationState(event.beta, event.gamma, previous));
     };
     window.addEventListener('deviceorientation', orient);
@@ -137,12 +144,12 @@ function PhoneSession({ sessionId, userId }) {
           <p>{wakeLock.status === 'active'
             ? 'Keep-awake is on. Leave this page open and place your phone face-down; automatic screen sleep is prevented.'
             : 'Keep-awake is unavailable or paused. Keep this page visible and turn off auto-lock in your phone settings for this session.'}</p>
-          <p>Manually locking your phone or switching apps can suspend motion detection and pause shared focus. Return here to reconnect.</p>
+          <p>During sleep we assume your last position is unchanged. Focus pauses when a new face-up reading arrives, not simply because your phone disconnects.</p>
           {wakeLock.status !== 'active' && wakeLock.status !== 'unsupported' && <button
             onClick={wakeLock.retry} className="mt-2 underline">Retry keep-awake</button>}
         </div>}
         <p className="text-sm text-muted dark:text-slate-400" aria-live="polite">
-          Connection: {connection}. {saved === effective ? `Saved: ${saved}.` : 'State waiting to sync…'}
+          {!visible && 'Sleeping / using last position. '}Connection: {connection}. {saved === effective ? `Saved: ${saved}.` : 'State waiting to sync…'}
         </p>
         {(connectionError || writeError) && <p role="alert" className="text-danger dark:text-red-300">{connectionError || writeError}</p>}
       </section>
