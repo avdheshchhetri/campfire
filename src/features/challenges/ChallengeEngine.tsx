@@ -1,3 +1,4 @@
+import { StudyMinigames } from './StudyMinigames';
 import ReadAloud from '../audio/ReadAloud.jsx';
 import { presentChallenge } from './challengePresentation';
 import Avatar from '../auth/Avatar';
@@ -68,6 +69,6 @@ export function ChallengePanel({ adapter, userId, roomId, roomName = 'Physics st
         {!loading && canStart && adapter.startGenerated && <StartChallenge subject={subject} topics={topics} busy={busy} disabled={players.length < 1 || players.length > 6 || !inRound} onGenerate={input => act(() => adapter.startGenerated!(input))} />}
         {!loading && canStart && !adapter.startGenerated && <p>Open a study room with syllabus topics to generate a practice question.</p>}
       </section></div>
-      <footer className="cf-study-roster" aria-label="Session participants"><span className="cf-roster-count">{players.length}/6 participants</span><ul>{players.map(player => <li key={player.user_id}><Avatar className="cf-roster-avatar" name={player.display_name} avatarKey={player.avatar_key}/><span>{player.display_name}{player.user_id === userId ? ' (you)' : ''}</span></li>)}</ul><details className="cf-study-rules"><summary>Session rules</summary><p>Everyone answers separately. The next question unlocks when all participants answer correctly. Tap the speaker to listen; audio is optional.</p></details></footer>
+      <footer className="cf-study-roster" aria-label="Session participants"><span className="cf-roster-count">{players.length}/6 participants</span><ul>{players.map(player => <li key={player.user_id}><Avatar className="cf-roster-avatar" name={player.display_name} avatarKey={player.avatar_key}/><span>{player.display_name}{player.user_id === userId ? ' (you)' : ''}</span></li>)}</ul><details className="cf-study-rules"><summary>Session rules</summary><p>Everyone answers separately. The next question unlocks when all participants answer correctly. Tap the speaker to listen; audio is optional.</p></details></footer><StudyMinigames topics={topics}/>
     </section></div></div>;
 }
