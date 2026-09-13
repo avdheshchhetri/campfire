@@ -112,29 +112,29 @@ function PhoneSession({ sessionId, userId }) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-5 py-10 text-slate-100">
-      <section className="mx-auto max-w-md space-y-6 rounded-3xl border border-slate-700 p-6">
-        <p className="text-sm font-semibold text-orange-300">CAMPFIRE MODE</p>
-        <h1 className="text-3xl font-bold">Phones down. Focus together.</h1>
-        <p role="status" className="text-slate-300">
+    <main className="min-h-screen bg-page dark:bg-slate-950 px-5 py-10 text-primary dark:text-slate-100">
+      <section className="mx-auto max-w-md space-y-6 rounded-3xl border border-border dark:border-slate-700 p-6">
+        <p className="text-sm font-semibold text-accent dark:text-orange-300">CAMPFIRE MODE</p>
+        <h1 className="font-display text-3xl font-bold">Phones down. Focus together.</h1>
+        <p role="status" className="text-muted dark:text-slate-300">
           {active === false ? 'This session has ended.' : hint}
         </p>
-        <div className={`rounded-2xl p-5 text-xl font-semibold ${effective === 'down' ? 'bg-emerald-950 text-emerald-300' : 'bg-red-950 text-red-300'}`}>
+        <div className={`rounded-2xl p-5 text-xl font-semibold ${effective === 'down' ? 'bg-success-soft dark:bg-emerald-950 text-success dark:text-emerald-300' : 'bg-danger-soft dark:bg-red-950 text-danger dark:text-red-300'}`}>
           {effective === 'down' ? 'Face-down / focused' : 'Face-up / paused'}
           {simulate && <span className="block text-sm">Simulation override enabled</span>}
         </div>
         <button onClick={enableMotion} disabled={requesting || enabled || active === false}
-          className="w-full rounded-xl bg-orange-400 p-3 font-bold text-slate-950 disabled:opacity-50">
+          className="w-full rounded-xl bg-accent dark:bg-orange-400 p-3 font-bold text-on-accent dark:text-slate-950 disabled:opacity-50">
           {requesting ? 'Requesting permission…' : enabled ? 'Motion Detection Enabled' : 'Enable Motion Detection'}
         </button>
         <button onClick={() => setSimulate(value => !value)} aria-pressed={simulate} disabled={active === false}
-          className="w-full rounded-xl border border-slate-500 p-3 disabled:opacity-50">
+          className="w-full rounded-xl border border-border dark:border-slate-500 p-3 disabled:opacity-50">
           {simulate ? 'Stop Simulating Face-Down' : 'Simulate Face-Down'}
         </button>
-        <p className="text-sm text-slate-400" aria-live="polite">
+        <p className="text-sm text-muted dark:text-slate-400" aria-live="polite">
           Connection: {connection}. {saved === effective ? `Saved: ${saved}.` : 'State waiting to sync…'}
         </p>
-        {(connectionError || writeError) && <p role="alert" className="text-red-300">{connectionError || writeError}</p>}
+        {(connectionError || writeError) && <p role="alert" className="text-danger dark:text-red-300">{connectionError || writeError}</p>}
       </section>
     </main>
   );

@@ -40,7 +40,7 @@ export default function SessionChallenges({ sessionId }) {
   }
   return <div className="cf-session-challenges">
     {error && <p role="alert" className="error-banner">{error} <button onClick={() => setRevision(value => value + 1)}>Retry</button></p>}
-    {!joined ? <section className="panel"><h2>Join the challenge circle</h2><p className="muted my-4">Each teammate joins on their own device. A round needs 3–6 participants.</p><button className="button" onClick={join} disabled={busy}>{busy ? 'Joining…' : 'Join session'}</button></section>
+    {!joined ? <section className="panel"><h2 className="font-display">Join the challenge circle</h2><p className="muted my-4">Each teammate joins on their own device. A round needs 3–6 participants.</p><button className="button" onClick={join} disabled={busy}>{busy ? 'Joining…' : 'Join session'}</button></section>
       : <ChallengeEngine client={supabase} roomId={room.id} sessionId={sessionId} userId={user.id} roomName={room.name} subject={room.subject || ''} topics={topics} />}
   </div>;
 }

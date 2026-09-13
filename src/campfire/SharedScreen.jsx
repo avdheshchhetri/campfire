@@ -15,7 +15,7 @@ export function StartSessionButton({ roomId, onStarted }) {
   }
   return <div>
     <button disabled={busy || !roomId} onClick={start}
-      className="rounded-xl bg-orange-400 px-5 py-3 font-bold text-slate-950 disabled:opacity-50">
+      className="rounded-xl bg-accent dark:bg-orange-400 px-5 py-3 font-bold text-on-accent dark:text-slate-950 disabled:opacity-50">
       {busy ? 'Starting…' : 'Start Session'}
     </button>
     {error && <p role="alert">{error}</p>}
@@ -88,11 +88,11 @@ function SessionDisplay({ sessionId, participants = [], canEnd = false, onEnded 
     : running ? 'Everyone is focused' : 'Timer paused';
 
   return (
-    <main className="min-h-screen bg-slate-950 p-6 text-slate-100 md:p-12">
+    <main className="min-h-screen bg-page dark:bg-slate-950 p-6 text-primary dark:text-slate-100 md:p-12">
       <div className="mx-auto max-w-5xl space-y-8">
-        <header><p className="font-semibold text-orange-300">CAMPFIRE MODE</p>
-          <h1 className="mt-2 text-3xl font-bold">Group focus session</h1></header>
-        <section className={`rounded-3xl border p-8 text-center ${running ? 'border-emerald-500 bg-emerald-950' : 'border-orange-400 bg-slate-900'}`}>
+        <header><p className="font-semibold text-accent dark:text-orange-300">CAMPFIRE MODE</p>
+          <h1 className="font-display mt-2 text-3xl font-bold">Group focus session</h1></header>
+        <section className={`rounded-3xl border p-8 text-center ${running ? 'border-success dark:border-emerald-500 bg-success-soft dark:bg-emerald-950' : 'border-accent dark:border-orange-400 bg-surface dark:bg-slate-900'}`}>
           <p role="status" className="text-xl">{label}</p>
           <p className="my-5 font-mono text-5xl tabular-nums md:text-8xl" aria-label={`Focus time ${time}`}>{time}</p>
           {!roster.length && <p>Waiting for the session participant list.</p>}
@@ -103,17 +103,17 @@ function SessionDisplay({ sessionId, participants = [], canEnd = false, onEnded 
           {roster.map(person => {
             const connected = online.has(person.user_id);
             const focused = connected && byUser.get(person.user_id) === 'down';
-            return <li key={person.user_id} className={`flex items-center gap-4 rounded-2xl border p-5 ${focused ? 'border-emerald-700 bg-emerald-950' : 'border-red-400 bg-red-950'}`}>
+            return <li key={person.user_id} className={`flex items-center gap-4 rounded-2xl border p-5 ${focused ? 'border-success dark:border-emerald-700 bg-success-soft dark:bg-emerald-950' : 'border-danger dark:border-red-400 bg-danger-soft dark:bg-red-950'}`}>
               {person.avatar_url ? <img src={person.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
-                : <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-full bg-slate-700">{person.name?.slice(0, 1) || '?'}</span>}
-              <div><p className={`font-bold ${focused ? 'text-emerald-300' : 'text-red-300'}`}>{person.name}</p>
+                : <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-full bg-surface dark:bg-slate-700">{person.name?.slice(0, 1) || '?'}</span>}
+              <div><p className={`font-bold ${focused ? 'text-success dark:text-emerald-300' : 'text-danger dark:text-red-300'}`}>{person.name}</p>
                 <p className="text-sm">{focused ? 'Down / focused' : !connected ? 'Offline / waiting' : 'Up / flagged'}</p></div>
             </li>;
           })}
         </ul>
-        {(syncError || endError) && <p role="alert" className="text-red-300">{syncError || endError}</p>}
+        {(syncError || endError) && <p role="alert" className="text-danger dark:text-red-300">{syncError || endError}</p>}
         {canEnd && <button onClick={finish} disabled={ending || !session?.is_active}
-          className="rounded-xl bg-orange-400 px-6 py-3 font-bold text-slate-950 disabled:opacity-50">
+          className="rounded-xl bg-accent dark:bg-orange-400 px-6 py-3 font-bold text-on-accent dark:text-slate-950 disabled:opacity-50">
           {ending ? 'Ending…' : 'End Session'}
         </button>}
       </div>

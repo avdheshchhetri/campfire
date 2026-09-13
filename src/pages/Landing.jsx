@@ -44,7 +44,7 @@ export default function Landing() {
     <div className="landing">
       <section className="welcome-copy">
         <div className="eyebrow flex items-center gap-2"><span className="tiny-line" />YOUR SHARED FOCUS SPACE</div>
-        <h1>Good company.<br />Better <em>focus.</em></h1>
+        <h1 className="font-display">Good company.<br />Better <em>focus.</em></h1>
         <p className="welcome-description">Pull up a chair. Bring your questions.<br className="hidden sm:block" /> Make a little progress, together.</p>
         <div className="principles"><span><BookOpen size={17} />One shared syllabus</span><span><Flame size={17} />A space to focus</span><span><Users size={17} />Your kind of people</span></div>
         <div className="focus-preview"><div className="focus-orbit" aria-hidden="true"><Flame size={35} strokeWidth={1.4} /></div><div><span className="eyebrow">LESS SCROLL. MORE FLOW.</span><p>Phones down. Minds connected. Build momentum with your whole group.</p></div></div>
@@ -52,8 +52,8 @@ export default function Landing() {
 
       <section className="entry-panel panel">
         <div className="entry-heading"><span className="soft-icon"><Flame size={23} /></span><span className="eyebrow">ENTER YOUR STUDY SPACE</span></div>
-        {!profile ? <><h2>There’s a seat for you.</h2><p className="muted mb-7">Start with your name. Your group is next.</p><SignIn /></> : <>
-          <h2>Find your study circle.</h2><p className="muted mb-6">Start something new, or pick up where your friends are.</p>
+        {!profile ? <><h2 className="font-display">There’s a seat for you.</h2><p className="muted mb-7">Start with your name. Your group is next.</p><SignIn /></> : <>
+          <h2 className="font-display">Find your study circle.</h2><p className="muted mb-6">Start something new, or pick up where your friends are.</p>
           <div className="segmented" role="group" aria-label="Room action">
             <button type="button" aria-pressed={mode === 'create'} onClick={() => { setMode('create'); setError(''); }}><Plus size={16} />Create a room</button>
             <button type="button" aria-pressed={mode === 'join'} onClick={() => { setMode('join'); setError(''); }}><DoorOpen size={16} />Join a room</button>
@@ -71,8 +71,8 @@ export default function Landing() {
       </section>
 
       {profile && <section className="your-rooms">
-        <div className="flex items-end justify-between mb-5"><div><p className="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2 className="text-2xl mt-2">Your rooms</h2></div><span className="muted text-sm">{rooms.length} {rooms.length === 1 ? 'room' : 'rooms'}</span></div>
-        {loading ? <p role="status" className="muted">Finding your rooms…</p> : listError ? <div role="alert" className="error-banner">{listError}<button className="button button-secondary mt-3" onClick={() => setRevision(value => value + 1)}>Try again</button></div> : rooms.length ? <div className="room-grid">{rooms.map(room => <Link className="room-card" key={room.id} to={`/room/${room.id}`}><span className="soft-icon"><BookOpen size={20} /></span><div className="min-w-0"><h3 className="font-semibold break-words">{room.name}</h3><p className="muted text-sm mt-1">{room.subject || 'A little bit of everything'}</p></div><ArrowRight className="ml-auto shrink-0" size={18} /></Link>)}</div> : <div className="room-empty"><Users size={24} /><div><p>Your next good study session starts here.</p><p className="muted text-sm mt-1">Create or join a room to bring your circle together.</p></div></div>}
+        <div className="flex items-end justify-between mb-5"><div><p className="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2 className="font-display text-2xl mt-2">Your rooms</h2></div><span className="muted text-sm">{rooms.length} {rooms.length === 1 ? 'room' : 'rooms'}</span></div>
+        {loading ? <p role="status" className="muted">Finding your rooms…</p> : listError ? <div role="alert" className="error-banner">{listError}<button className="button button-secondary mt-3" onClick={() => setRevision(value => value + 1)}>Try again</button></div> : rooms.length ? <div className="room-grid">{rooms.map(room => <Link className="room-card" key={room.id} to={`/room/${room.id}`}><span className="soft-icon"><BookOpen size={20} /></span><div className="min-w-0"><h3 className="font-display font-semibold break-words">{room.name}</h3><p className="muted text-sm mt-1">{room.subject || 'A little bit of everything'}</p></div><ArrowRight className="ml-auto shrink-0" size={18} /></Link>)}</div> : <div className="room-empty"><Users size={24} /><div><p>Your next good study session starts here.</p><p className="muted text-sm mt-1">Create or join a room to bring your circle together.</p></div></div>}
       </section>}
     </div>
   );

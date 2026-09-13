@@ -33,13 +33,13 @@ export default function Session({ view = 'overview' }) {
   const base = `/room/${roomId}/session/${sessionId}`;
   if (state.loading) return <p className="empty-state" role="status">Opening the session…</p>;
   if (state.error || !state.session || !state.session.is_active || state.session.ended_at) return <section className="panel empty-state">
-    <h1 className="page-heading">{state.error ? 'Couldn’t load this session' : !state.session ? 'This session isn’t here' : 'This session has ended'}</h1>
+    <h1 className="font-display page-heading">{state.error ? 'Couldn’t load this session' : !state.session ? 'This session isn’t here' : 'This session has ended'}</h1>
     <p className="muted my-5" role={state.error ? 'alert' : undefined}>{state.error || 'Return to your room to start or join another session.'}</p>
     {state.error && <button className="button mr-3" onClick={() => setRevision(value => value + 1)}>Try again</button>}
     <Link className="button button-secondary" to={`/room/${roomId}`}>Back to room</Link>
   </section>;
   return <>
-    <h1 className="page-heading mb-6">Your group’s focus space</h1>
+    <h1 className="font-display page-heading mb-6">Your group’s focus space</h1>
     <nav aria-label="Session views" className="flex flex-wrap gap-3 mb-6">
       <Link className="button button-secondary" to={`/room/${roomId}`}>Back to room</Link>
       <Link className="button button-secondary" to={`${base}/phone`}>Use this phone</Link>

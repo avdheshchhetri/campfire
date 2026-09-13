@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { leaveRoom } from '../lib/rooms';
 import SignIn from './SignIn';
+import ThemeToggle from './ThemeToggle';
 
 export default function AppLayout() {
   const { profile, user, loading, error: authError, retryProfile } = useAuth();
@@ -59,6 +60,7 @@ export default function AppLayout() {
       <header className="site-header">
         <Link to="/" className="brand" aria-label="Campfire home"><span className="brand-icon"><Flame size={25} strokeWidth={1.7} /></span>campfire<span className="brand-period">.</span></Link>
         <span className="header-note">A little focus. A little company.</span>
+        <ThemeToggle />
         {profile ? <div className="user-chip"><span className="avatar small">{profile.display_name.slice(0, 1).toUpperCase()}</span><span>{profile.display_name}</span></div> : <span className="text-sm muted">Study better, together</span>}
       </header>
 
@@ -71,7 +73,7 @@ export default function AppLayout() {
       </div>}
       {leaveError && <div role="alert" className="error-banner mx-auto max-w-6xl">{leaveError}</div>}
       <main id="main-content" className="main-content">
-        {loading ? <div className="empty-state" role="status">Getting your space ready…</div> : user && !profile ? <section className="panel mx-auto max-w-md"><h1 className="text-2xl mb-4">Let’s finish your profile</h1><p role="alert" className="error-banner">{authError || 'Your profile could not be loaded.'}</p><button className="button mt-4" onClick={() => retryProfile().catch(() => {})}>Try again</button></section> : <Outlet context={context} />}
+        {loading ? <div className="empty-state" role="status">Getting your space ready…</div> : user && !profile ? <section className="panel mx-auto max-w-md"><h1 className="font-display text-2xl mb-4">Let’s finish your profile</h1><p role="alert" className="error-banner">{authError || 'Your profile could not be loaded.'}</p><button className="button mt-4" onClick={() => retryProfile().catch(() => {})}>Try again</button></section> : <Outlet context={context} />}
       </main>
       <footer className="site-footer"><span><Flame size={14} />Made for minds that grow together.</span><span>One topic at a time.</span></footer>
     </div>
@@ -81,8 +83,8 @@ export default function AppLayout() {
 export function RequireRoom() {
   const { profile } = useAuth();
   const context = useOutletContext();
-  if (!profile) return <section className="panel mx-auto max-w-md"><p className="eyebrow">YOU’RE WELCOME HERE</p><h1 className="text-3xl mb-7">Join your study group</h1><SignIn /></section>;
+  if (!profile) return <section className="panel mx-auto max-w-md"><p className="eyebrow">YOU’RE WELCOME HERE</p><h1 className="font-display text-3xl mb-7">Join your study group</h1><SignIn /></section>;
   if (context.roomLoading) return <div className="empty-state" role="status">Opening your room…</div>;
-  if (context.roomError || !context.room) return <section className="empty-state"><h1>We couldn’t open this room</h1><p role="alert" className="muted">{context.roomError}</p><div className="flex flex-wrap justify-center gap-3 mt-5"><button className="button button-secondary" onClick={context.refreshRoom}>Try again</button><Link className="button" to="/">Back to your rooms</Link></div></section>;
+  if (context.roomError || !context.room) return <section className="empty-state"><h1 className="font-display">We couldn’t open this room</h1><p role="alert" className="muted">{context.roomError}</p><div className="flex flex-wrap justify-center gap-3 mt-5"><button className="button button-secondary" onClick={context.refreshRoom}>Try again</button><Link className="button" to="/">Back to your rooms</Link></div></section>;
   return <Outlet context={context} />;
 }

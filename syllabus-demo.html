@@ -1,9 +1,19 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      (() => {
+        let theme = 'dark';
+        try { if (localStorage.getItem('theme-preference') === 'light') theme = 'light'; } catch {}
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Campfire · Syllabus & teach-back demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,100..900;1,100..900&amp;family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&amp;display=swap" rel="stylesheet" />
   </head>
   <body><div id="root"></div><script type="module" src="/demo/syllabus/main.jsx"></script></body>
 </html>
