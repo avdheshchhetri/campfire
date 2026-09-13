@@ -19,25 +19,27 @@
     "build:syllabus-demo": "vite build --config vite.syllabus-demo.config.ts"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.24.1",
     "@supabase/supabase-js": "^2.57.0",
+    "jose": "^6.2.12",
     "lucide-react": "^0.468.0",
+    "pdf-lib": "^1.17.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.0",
-    "pdf-lib": "^1.17.1"
+    "react-router-dom": "^7.9.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@tailwindcss/vite": "^4.1.13",
     "@testing-library/react": "^16.3.0",
-    "@vitejs/plugin-react": "^5.0.3",
-    "jsdom": "^26.1.0",
-    "tailwindcss": "^4.1.13",
-    "vite": "^7.1.5",
-    "vitest": "^3.2.4",
-    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^22.20.2",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "typescript": "~5.8.3"
+    "@vitejs/plugin-react": "^5.0.3",
+    "jsdom": "^26.1.0",
+    "tailwindcss": "^4.1.13",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.5",
+    "vitest": "^3.2.4"
   }
 }

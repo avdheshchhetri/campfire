@@ -293,3 +293,19 @@ it('supports untimed Spark answers, manual reveal/next, and ending games',async(
  await db.query("select cf_game_control($1,$2,'end_game')",[room,id]);
  state=(await db.query<{value:any}>('select cf_game_snapshot($1) as value',[room])).rows[0].value;expect(state.phase).toBe('finished');expect(state.players.find((p:any)=>p.id===owner).score).toBe(1);
 });
+
+it('protects Auth0 mappings while retaining UUID profile permissions', async () => {
+  const id = '90000000-0000-0000-0000-000000000009';
+  await db.exec(`reset role; insert into auth.users(id) values ('${id}');`);
+  await asUser(id);
+  await expect(db.query('insert into public.profiles(id,display_name,auth0_id) values ($1,$2,$3)', [id,'Test','forged-sub'])).rejects.toThrow();
+  await db.query('insert into public.profiles(id,display_name) values ($1,$2)', [id,'Test']);
+  await expect(db.query('update public.profiles set auth0_id=$1 where id=$2', ['forged-sub',id])).rejects.toThrow();
+  await db.exec('reset role');
+  await db.query('update public.profiles set auth0_id=$1 where id=$2',['trusted-sub',id]);
+  await asUser(id);
+  await db.query('update public.profiles set display_name=$1 where id=$2',['New name',id]);
+  const result = await db.query<{id:string,auth0_id:string}>('select id,auth0_id from public.profiles where id=$1',[id]);
+  expect(result.rows[0]).toEqual({id,auth0_id:'trusted-sub'});
+  await db.exec('reset role');
+});

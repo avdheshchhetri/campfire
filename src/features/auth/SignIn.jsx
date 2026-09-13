@@ -1,3 +1,4 @@
+import { Auth0LoginButton, useIdentity } from './Auth0Login';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
@@ -5,6 +6,7 @@ import { useAuth } from './AuthContext';
 import { isSupabaseConfigured } from '../../lib/supabaseClient';
 
 export default function SignIn() {
+  const identity = useIdentity();
   const { signIn, error: authError } = useAuth();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -17,6 +19,7 @@ export default function SignIn() {
     catch (err) { setError(err.message); }
     finally { setBusy(false); }
   }
+  if (identity.enabled) return <Auth0LoginButton />;
   return (
     <form onSubmit={submit} className="space-y-5">
       <Link className="button button-secondary w-full" to="/account">Log in or create an account</Link>

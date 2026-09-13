@@ -1,3 +1,4 @@
+import auth0Session from '../../api/auth0-session.js';
 import roomStudy from '../../api/room-study.js';
 import { loadEnv } from 'vite';
 import speak from '../../api/speak.js';
@@ -7,6 +8,7 @@ import generateChallenge from '../../api/generate-challenge-gemini.js';
 import saveChallenge from '../../api/save-challenge.js';
 
 const routes = {
+  '/api/auth0-session': auth0Session,
   '/api/room-study': roomStudy,
   '/api/speak': speak,
   '/api/parse-syllabus': parseSyllabus,
@@ -22,7 +24,7 @@ export function localApi() {
     apply: 'serve',
     configResolved(config) {
       const env = loadEnv(config.mode, config.envDir, '');
-      for (const key of ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY',
+      for (const key of ['AUTH0_DOMAIN', 'AUTH0_AUDIENCE', 'AUTH0_CLIENT_ID', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY',
         'ELEVENLABS_API_KEY', 'ELEVENLABS_VOICE_ID', 'GEMINI_API_KEY', 'GEMINI_MODEL', 'GEMINI_CHALLENGE_MODEL', 'TEACHING_SIGNING_SECRET']) {
         if (!process.env[key] && env[key]) process.env[key] = env[key];
       }

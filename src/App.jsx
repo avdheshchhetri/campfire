@@ -1,3 +1,4 @@
+import CampfireAuth0 from './features/auth/Auth0Login';
 import Games from './pages/Games';
 import Flashcards from './pages/Flashcards';
 import { FocusClockProvider } from './features/focus/FocusClockProvider';
@@ -16,7 +17,7 @@ const Router = import.meta.env.VITE_GITHUB_PAGES === 'true' ? HashRouter : Brows
 
 export default function App() {
   return (
-    <AuthProvider>
+    <CampfireAuth0><AuthProvider>
       <FocusClockProvider><Router>
         <Routes>
           <Route element={<AppLayout />}>
@@ -36,6 +37,6 @@ export default function App() {
           </Route>
         </Routes>
       </Router></FocusClockProvider>
-    </AuthProvider>
+    </AuthProvider></CampfireAuth0>
   );
 }

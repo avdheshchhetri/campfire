@@ -21,6 +21,9 @@
     },
     "api/room-study.js": {
       "maxDuration": 60
+    },
+    "api/auth0-session.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
