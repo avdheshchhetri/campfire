@@ -6,5 +6,5 @@ export function useRoomGame(roomId){
  const live=useRef(false),busy=useRef(false),offset=useRef(0);
  const refresh=useCallback(async()=>{if(busy.current)return;busy.current=true;try{const value=await gameRpc('cf_game_snapshot',{p_room:roomId});if(live.current){if(value)offset.current=Date.parse(value.server_now)-Date.now();setGame(value);setError('');}}catch(e){if(live.current)setError(e.message);}finally{busy.current=false;if(live.current)setLoading(false);}},[roomId]);
  useEffect(()=>{live.current=true;void refresh();const channel=supabase.channel(`room-games:${roomId}:${crypto.randomUUID()}`).on('postgres_changes',{event:'*',schema:'public',table:'challenges',filter:`room_id=eq.${roomId}`},refresh).subscribe();const poll=setInterval(refresh,1500),clock=setInterval(()=>setNow(Date.now()+offset.current),250);return()=>{live.current=false;clearInterval(poll);clearInterval(clock);void supabase.removeChannel(channel);};},[roomId,refresh]);
- return {game,error,loading,refresh,seconds:game?Math.max(0,Math.ceil((Date.parse(game.deadline)-now)/1000)):0};
+ return {game,error,loading,refresh,seconds:game&&Number.isFinite(Date.parse(game.deadline))?Math.max(0,Math.ceil((Date.parse(game.deadline)-now)/1000)):0};
 }

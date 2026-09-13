@@ -278,3 +278,18 @@ it('enforces discussion deadlines and denies outsiders access to room games',asy
  const outsider='00000000-0000-0000-0000-000000009999';await db.exec('reset role');await db.query('insert into auth.users(id) values($1)',[outsider]);await db.query("insert into profiles(id,display_name) values($1,'Outside')",[outsider]);
  await asUser(outsider);await expect(db.query('select cf_game_snapshot($1)',[room])).rejects.toThrow();expect((await db.query('select * from flashcards where room_id=$1',[room])).rows).toHaveLength(0);
 });
+it('supports untimed Spark answers, manual reveal/next, and ending games',async()=>{
+ await db.exec('reset role');await db.query("update challenges set status='cancelled' where room_id=$1 and type in ('trivia','two_truths','mystery_voice') and status='active'",[room]);
+ const owner=(await db.query<{user_id:string}>('select user_id from room_members where room_id=$1 limit 1',[room])).rows[0].user_id;
+ const payload={rounds:Array.from({length:5},()=>({prompt_text:'Q',options:['A','B','C','D'],correct_option_index:1,explanation:'B is right'}))};
+ const id=(await db.query<{id:string}>('select cf_save_room_game($1,$2,$3,$4) as id',[room,owner,'trivia',JSON.stringify(payload)])).rows[0].id;
+ await db.query("update cf_private.game_state set deadline=now()-interval '1 day' where challenge_id=$1",[id]);
+ await asUser(owner);let state=(await db.query<{value:any}>('select cf_game_snapshot($1) as value',[room])).rows[0].value;expect(state.phase).toBe('question');
+ await db.query('select cf_game_answer($1,$2,1)',[room,state.round.id]);
+ await db.query("select cf_game_control($1,$2,'end_question')",[room,id]);
+ state=(await db.query<{value:any}>('select cf_game_snapshot($1) as value',[room])).rows[0].value;expect(state.phase).toBe('reveal');expect(state.round.correct).toBe(1);
+ await db.query("select cf_game_control($1,$2,'next')",[room,id]);
+ state=(await db.query<{value:any}>('select cf_game_snapshot($1) as value',[room])).rows[0].value;expect(state.round_index).toBe(1);
+ await db.query("select cf_game_control($1,$2,'end_game')",[room,id]);
+ state=(await db.query<{value:any}>('select cf_game_snapshot($1) as value',[room])).rows[0].value;expect(state.phase).toBe('finished');expect(state.players.find((p:any)=>p.id===owner).score).toBe(1);
+});

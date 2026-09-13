@@ -5,7 +5,7 @@ These are additive room tabs. They reuse `room-nav`/`NavLink`, `feature-grid`, `
 ## Setup
 
 1. Apply all existing migrations through `20260913000600_shared_questions.sql` first.
-2. Run the entire [007 migration](../supabase/migrations/20260913000700_room_games.sql) in **Supabase → SQL Editor → New query → Run**. Run this migration once; stop on errors. It creates the new tables, permissions, and game functions.
+2. Run the entire [007 migration](../supabase/migrations/20260913000700_room_games.sql) in **Supabase → SQL Editor → New query → Run**. Run this migration once; stop on errors. Then apply migration 008 for game controls. It creates the new tables, permissions, and game functions.
 3. Deploy the frontend and `/api/room-study` route together. The local Vite API middleware also registers this route. GitHub Pages alone cannot generate AI content or speech.
 4. Reuse the existing server `GEMINI_API_KEY`, Supabase server configuration, and optional `ELEVENLABS_API_KEY`/`ELEVENLABS_VOICE_ID`. No new provider keys are introduced.
 5. Teach or verify a syllabus topic before starting games. Flashcards can use any saved topic.
@@ -14,11 +14,11 @@ These are additive room tabs. They reuse `room-nav`/`NavLink`, `feature-grid`, `
 
 There is one active room game at a time. Every room member at creation belongs to the fixed game roster. Late joiners can watch and join the next game. All games are independent of a focus session.
 
-- **Spark Round:** five Gemini questions, four choices each, one correct answer, 20 seconds per round. Each member may submit once. The answer is revealed when everyone votes or time expires.
+- **Spark Round:** five Gemini questions, four choices each, one correct answer, no answer timer. Each member may submit once. The answer is revealed when everyone votes or a participant selects End question and reveal answer.
 - **Two Truths, One Lie:** five rounds of three statements, exactly one false. Members have up to 40 seconds for discussion and voting. The reveal explains why the false statement is wrong.
 - **The Ember Riddle:** three or four progressively specific clues from one taught/verified topic. The next clue appears every 15 seconds. First correct guess wins; after the final clue's time expires the answer is shown. Matching ignores case, punctuation and spacing, and accepts a single-character edit for terms of at least six characters. Guesses have a three-second per-user cooldown. Next Riddle creates a fresh game.
 
-Spark and Two Truths award one game point per correct vote. No answer before the deadline means no point. Reveals last eight seconds before the next round; after round five the final scoreboard stays visible. Riddles award one game point to the winner. These points never change the study leaderboard or syllabus verification.
+Spark and Two Truths award one game point per correct vote. No answer before the deadline means no point. Spark reveals wait for Next question; Two Truths reveals last eight seconds before the next round; after round five the final scoreboard stays visible. Riddles award one game point to the winner. These points never change the study leaderboard or syllabus verification.
 
 Database time controls deadlines, vote acceptance and phase transitions. Realtime on `challenges` tells viewers to refresh after votes/reveals; 1.5-second polling recovers missed events and requests due transitions. Any viewer can trigger a due transition, but cannot advance early. A database lock serializes votes, guesses and transitions. No always-running scheduler is required. When every viewer closes the tab, the current deadline still expires; the next viewer processes that expiry, with later rounds starting when observed rather than silently skipping the whole game.
 
@@ -32,7 +32,7 @@ The player reuses the app's sound button, speaking indicator and pause behavior.
 
 ## Flashcards
 
-Choose one topic or Whole syllabus, then Generate Flashcards. Whole-syllabus generation runs sequential batches of up to five topics, saving each successful batch. If a later batch fails, prior cards remain; select the remaining topics to retry without regenerating completed batches. Generation requests approximately two cards per topic; repeated generation adds another set.
+Choose one topic or Whole syllabus, then Generate Flashcards. Whole-syllabus generation runs sequential batches of one topic, saving each successful batch. If a later batch fails, prior cards remain; select the remaining topics to retry without regenerating completed batches. Generation requests approximately two cards per topic; repeated generation adds another set.
 
 Cards are shared within the room and can be reviewed at any time, without an active game or focus session. Click the card to flip, use Previous/Next, or Shuffle. The back is hidden until flipped; moving to a different card resets it to the front. Review position/shuffle order is local to the open page and does not affect other members.
 
@@ -63,3 +63,5 @@ The migration adds `audio_url`, `game_rounds`, `game_answers`, and `flashcards` 
 ## Verification
 
 Automated tests cover complete five-round play, vote idempotency, early-answer privacy, revealed room-wide clues, first-correct riddle completion, fuzzy matching, flashcard read/write permissions, and existing app regressions. Hosted multi-device Realtime and actual Gemini/ElevenLabs generation require configured deployment credentials and the migration; mocked-provider tests do not verify account quota or voice access.
+
+Any original participant can choose End game for everyone, confirm, and close the current game with scores retained. Spark deadlines are ignored by vote validation; the review stays open until Next question. Two Truths and riddles keep their existing timers. Migration 008 is required for these controls.
