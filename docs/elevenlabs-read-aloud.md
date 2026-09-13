@@ -122,3 +122,15 @@ Automated tests cover route authorization, mood settings, provider errors, click
 ## Quiz questions and clues
 
 The challenge question includes an optional sound button. Teammate clue audio is mounted only inside the revealed clue: reveal first, then click its sound button to request speech. Hiding the clue stops playback and cancels a pending request. No speech request occurs merely by revealing it, and audio failure never blocks answers or hint controls.
+
+## Troubleshooting speech access
+
+The speech route distinguishes rejected credentials, missing Text to Speech permissions, inaccessible voices, plan/credit restrictions, and temporary provider failures without exposing raw provider responses.
+
+- Set `ELEVENLABS_API_KEY` as a server secret in the hosting project's environment for the deployment you use, then redeploy. Do not use a `VITE_` prefix.
+- The key must allow Text to Speech. A valid key can still lack this permission.
+- Set `ELEVENLABS_VOICE_ID` to the ID of one consistent voice your account can use through the API. Voice Library availability in the website does not guarantee API access on your plan. Add the selected voice to your account when required.
+- A plan or credit error does not mean you must upgrade: first check whether a different voice is available through your existing plan. Campfire does not change billing or automatically buy credits.
+- If an older deployment still shows the generic “Check the ElevenLabs key and voice access” message, deploy the latest commit to receive the specific error.
+
+See [ElevenLabs error documentation](https://elevenlabs.io/docs/eleven-api/resources/errors) and [API key permissions](https://elevenlabs.io/docs/overview/administration/workspaces/api-keys).
