@@ -22,7 +22,23 @@ export function createSupabaseAdapter({ client, roomId, sessionId }: ChallengeEn
   }
   let pending: { key: string; challenge: unknown } | null = null;
   return {
-    async load(): Promise<Snapshot> { return await rpc('cf_snapshot', { p_room: roomId, p_session: sessionId }); },
+    async load(): Promise<Snapshot> {
+      const snapshot: Snapshot = await rpc('cf_snapshot', { p_room: roomId, p_session: sessionId });
+      try {
+        const { data, error } = await client.from('room_members')
+          .select('user_id, profiles!room_members_user_id_fkey(display_name, avatar_url)')
+          .eq('room_id', roomId);
+        if (error) return snapshot;
+        const profiles = new Map((data ?? []).map(member => [member.user_id,
+          Array.isArray(member.profiles) ? member.profiles[0] : member.profiles]));
+        return { ...snapshot, players: snapshot.players.map(player => ({
+          ...player, avatar_url: profiles.get(player.user_id)?.avatar_url ?? player.avatar_url,
+        })) };
+      } catch {
+        // Optional profile details must not interrupt an active puzzle.
+        return snapshot;
+      }
+    },
     async start() { await rpc('cf_start', { p_room: roomId, p_session: sessionId }); },
     async startGenerated(input) {
       const body = { roomId, sessionId, ...input };

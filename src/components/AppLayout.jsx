@@ -5,6 +5,8 @@ import { useAuth } from '../auth/AuthContext';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { leaveRoom } from '../lib/rooms';
 import SignIn from './SignIn';
+import Avatar from './Avatar.jsx';
+import ProfileSettings from './ProfileSettings.jsx';
 
 export default function AppLayout() {
   const { profile, user, loading, error: authError, retryProfile } = useAuth();
@@ -59,7 +61,7 @@ export default function AppLayout() {
       <header className="site-header">
         <Link to="/" className="brand" aria-label="Campfire home"><span className="brand-icon"><Flame size={25} strokeWidth={1.7} /></span>campfire<span className="brand-period">.</span></Link>
         <span className="header-note">A little focus. A little company.</span>
-        {profile ? <div className="user-chip"><span className="avatar small">{profile.display_name.slice(0, 1).toUpperCase()}</span><span>{profile.display_name}</span></div> : <span className="text-sm muted">Study better, together</span>}
+        {profile ? <div className="user-chip"><Avatar avatarUrl={profile.avatar_url} name={profile.display_name} className="avatar small" /><span>{profile.display_name}</span></div> : <span className="text-sm muted">Study better, together</span>}
       </header>
 
       {!isSupabaseConfigured && <div className="setup-banner" role="status"><strong>Connect your study space.</strong> Add your Supabase URL and public key to <code>.env.local</code> to enable sign-in and rooms. See README for setup.</div>}
@@ -71,6 +73,7 @@ export default function AppLayout() {
       </div>}
       {leaveError && <div role="alert" className="error-banner mx-auto max-w-6xl">{leaveError}</div>}
       <main id="main-content" className="main-content">
+        <ProfileSettings />
         {loading ? <div className="empty-state" role="status">Getting your space ready…</div> : user && !profile ? <section className="panel mx-auto max-w-md"><h1 className="text-2xl mb-4">Let’s finish your profile</h1><p role="alert" className="error-banner">{authError || 'Your profile could not be loaded.'}</p><button className="button mt-4" onClick={() => retryProfile().catch(() => {})}>Try again</button></section> : <Outlet context={context} />}
       </main>
       <footer className="site-footer"><span><Flame size={14} />Made for minds that grow together.</span><span>One topic at a time.</span></footer>
